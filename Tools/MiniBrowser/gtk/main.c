@@ -67,7 +67,7 @@ static void createBrowserWindow(const gchar *uri, WebKitSettings *webkitSettings
 
     browser_window_load_uri(BROWSER_WINDOW(mainWindow), url);
     g_free(url);
-
+    
     gtk_widget_grab_focus(webView);
     gtk_widget_show(mainWindow);
 }
@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
 {
     gtk_init(&argc, &argv);
     g_setenv("WEBKIT_INJECTED_BUNDLE_PATH", WEBKIT_INJECTED_BUNDLE_PATH, FALSE);
+    g_print("KVNDEBUG: MiniBrowser started.\n");
 
     const gchar *multiprocess = g_getenv("MINIBROWSER_MULTIPROCESS");
     if (multiprocess && *multiprocess) {
@@ -279,7 +280,7 @@ int main(int argc, char *argv[])
         for (i = 0; uriArguments[i]; i++)
             createBrowserWindow(uriArguments[i], webkitSettings);
     } else
-        createBrowserWindow("http://www.webkitgtk.org/", webkitSettings);
+        createBrowserWindow("http://www.facebook.com/", webkitSettings);
 
     g_clear_object(&webkitSettings);
 

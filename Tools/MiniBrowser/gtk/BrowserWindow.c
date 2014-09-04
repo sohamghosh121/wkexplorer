@@ -268,6 +268,24 @@ static void geolocationRequestDialogCallback(GtkDialog *dialog, gint response, W
     g_object_unref(request);
 }
 
+        
+static void webViewResourceLoadStarted(WebKitWebView         *web_view,
+                                       WebKitWebResource     *web_resource,
+                                       WebKitURIRequest  *request,
+                                       gpointer               user_data)
+{
+     const char *webview_uri;
+     const char *webresource_uri;
+     const char *request_uri;
+
+     webview_uri = webkit_web_view_get_uri(web_view);
+     webresource_uri = webkit_web_resource_get_uri(web_resource);
+     request_uri = webkit_uri_request_get_uri(request);
+
+     g_print("KVNDEBUG: %s\n%s\n%s\n", webview_uri, 
+              webresource_uri, request_uri);
+}
+
 static void webViewClose(WebKitWebView *webView, BrowserWindow *window)
 {
     gtk_widget_destroy(GTK_WIDGET(window));
@@ -359,6 +377,7 @@ static GtkWidget *webViewCreate(WebKitWebView *webView, WebKitNavigationAction *
     g_signal_connect(newWebView, "close", G_CALLBACK(webViewClose), newWindow);
     return GTK_WIDGET(newWebView);
 }
+
 
 static gboolean webViewLoadFailed(WebKitWebView *webView, WebKitLoadEvent loadEvent, const char *failingURI, GError *error, BrowserWindow *window)
 {
@@ -709,6 +728,9 @@ static void browserWindowConstructed(GObject *gObject)
     g_signal_connect(window->webView, "enter-fullscreen", G_CALLBACK(webViewEnterFullScreen), window);
     g_signal_connect(window->webView, "leave-fullscreen", G_CALLBACK(webViewLeaveFullScreen), window);
     g_signal_connect(window->webView, "notify::is-loading", G_CALLBACK(webViewIsLoadingChanged), window);
+    g_signal_connect(window->webView, "resource-load-started", G_CALLBACK(webViewResourceLoadStarted), window);
+    g_print("KVNDEBUG: registered resource-load-started\n");
+
 
     g_signal_connect(webkit_web_view_get_context(window->webView), "download-started", G_CALLBACK(downloadStarted), window);
 
