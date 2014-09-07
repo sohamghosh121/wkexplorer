@@ -81,6 +81,24 @@ static gint windowCount = 0;
 
 G_DEFINE_TYPE(BrowserWindow, browser_window, GTK_TYPE_WINDOW)
 
+FILE *logFile = NULL;
+
+static void logTraceEvent(const char *eventname, unsigned int size, const char *data)
+{
+    if (logFile == NULL){
+        logFile = fopen("trace.bin","a");
+    }
+    if (logFile == NULL){
+        g_printerr("KVNDEBUG: error opening trace.bin\n");
+        exit(-1);
+    }
+    fputs("KVNTEBEGIN", logFile);
+    fwrite(eventname, 4, 1, logFile);
+    fwrite(&size, sizeof(size), 1, logFile);
+    fwrite(data, size, 1, logFile);
+    fputs("KVNTEEND", logFile);
+}
+
 static char *getInternalURI(const char *uri)
 {
     // Internally we use minibrowser-about: as about: prefix is ignored by WebKit.
@@ -268,6 +286,27 @@ static void geolocationRequestDialogCallback(GtkDialog *dialog, gint response, W
     g_object_unref(request);
 }
 
+static void webResourceGetDataFinished(GObject *source_object,
+                                       GAsyncResult *result,
+                                       gpointer user_data)
+{
+    WebKitWebResource *resource = WEBKIT_WEB_RESOURCE(source_object);
+    gsize length = -1;
+    GError *error = NULL;
+    guchar *h = webkit_web_resource_get_data_finish(resource, result, &length, &error);
+    const gchar *webresource_uri = webkit_web_resource_get_uri(resource);
+    
+    g_print("KVNDEBUG: Got data length %u from uri %s\n", length, webresource_uri);
+    logTraceEvent("RESP",length,h);
+}
+    
+
+static void webResourceFinished(WebKitWebResource *resource,
+                                gpointer           user_data)
+{
+    webkit_web_resource_get_data(resource, NULL, webResourceGetDataFinished, user_data);
+}
+
         
 static void webViewResourceLoadStarted(WebKitWebView         *web_view,
                                        WebKitWebResource     *web_resource,
@@ -284,6 +323,8 @@ static void webViewResourceLoadStarted(WebKitWebView         *web_view,
 
      g_print("KVNDEBUG: %s\n%s\n%s\n", webview_uri, 
               webresource_uri, request_uri);
+     // TODO: use logTraceEvent
+     g_signal_connect(web_resource, "finished", G_CALLBACK(webResourceFinished), user_data);
 }
 
 static void webViewClose(WebKitWebView *webView, BrowserWindow *window)
@@ -729,7 +770,6 @@ static void browserWindowConstructed(GObject *gObject)
     g_signal_connect(window->webView, "leave-fullscreen", G_CALLBACK(webViewLeaveFullScreen), window);
     g_signal_connect(window->webView, "notify::is-loading", G_CALLBACK(webViewIsLoadingChanged), window);
     g_signal_connect(window->webView, "resource-load-started", G_CALLBACK(webViewResourceLoadStarted), window);
-    g_print("KVNDEBUG: registered resource-load-started\n");
 
 
     g_signal_connect(webkit_web_view_get_context(window->webView), "download-started", G_CALLBACK(downloadStarted), window);
