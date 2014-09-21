@@ -451,6 +451,7 @@
     <ClCompile Include="..\dfg\DFGSpeculativeJIT.cpp" />
     <ClCompile Include="..\dfg\DFGSpeculativeJIT32_64.cpp" />
     <ClCompile Include="..\dfg\DFGSpeculativeJIT64.cpp" />
+    <ClCompile Include="..\dfg\DFGSSACalculator.cpp" />
     <ClCompile Include="..\dfg\DFGSSAConversionPhase.cpp" />
     <ClCompile Include="..\dfg\DFGSSALoweringPhase.cpp" />
     <ClCompile Include="..\dfg\DFGStackLayoutPhase.cpp" />
@@ -700,7 +701,7 @@
     <ClCompile Include="..\runtime\IntendedStructureChain.cpp" />
     <ClCompile Include="..\runtime\InternalFunction.cpp" />
     <ClCompile Include="..\runtime\JSAPIValueWrapper.cpp" />
-    <ClCompile Include="..\runtime\JSActivation.cpp" />
+    <ClCompile Include="..\runtime\JSLexicalEnvironment.cpp" />
     <ClCompile Include="..\runtime\JSArgumentsIterator.cpp" />
     <ClCompile Include="..\runtime\JSArray.cpp" />
     <ClCompile Include="..\runtime\JSArrayIterator.cpp" />
@@ -710,6 +711,7 @@
     <ClCompile Include="..\runtime\JSArrayBufferView.cpp" />
     <ClCompile Include="..\runtime\JSBoundFunction.cpp" />
     <ClCompile Include="..\runtime\JSCJSValue.cpp" />
+    <ClCompile Include="..\runtime\JSCallee.cpp" />
     <ClCompile Include="..\runtime\JSCell.cpp" />
     <ClCompile Include="..\runtime\JSConsole.cpp" />
     <ClCompile Include="..\runtime\JSDataView.cpp" />
@@ -743,7 +745,7 @@
     <ClCompile Include="..\runtime\JSTypedArrayConstructors.cpp" />
     <ClCompile Include="..\runtime\JSTypedArrayPrototypes.cpp" />
     <ClCompile Include="..\runtime\JSTypedArrays.cpp" />
-    <ClCompile Include="..\runtime\JSVariableObject.cpp" />
+    <ClCompile Include="..\runtime\JSEnvironmentRecord.cpp" />
     <ClCompile Include="..\runtime\JSWeakMap.cpp" />
     <ClCompile Include="..\runtime\JSWithScope.cpp" />
     <ClCompile Include="..\runtime\JSWrapperObject.cpp" />
@@ -1101,6 +1103,7 @@
     <ClInclude Include="..\dfg\DFGSilentRegisterSavePlan.h" />
     <ClInclude Include="..\dfg\DFGSlowPathGenerator.h" />
     <ClInclude Include="..\dfg\DFGSpeculativeJIT.h" />
+    <ClInclude Include="..\dfg\DFGSSACalculator.h" />
     <ClInclude Include="..\dfg\DFGSSAConversionPhase.h" />
     <ClInclude Include="..\dfg\DFGSSALoweringPhase.h" />
     <ClInclude Include="..\dfg\DFGStackLayoutPhase.h" />
@@ -1452,7 +1455,7 @@
     <ClInclude Include="..\runtime\InternalFunction.h" />
     <ClInclude Include="..\runtime\Intrinsic.h" />
     <ClInclude Include="..\runtime\JSAPIValueWrapper.h" />
-    <ClInclude Include="..\runtime\JSActivation.h" />
+    <ClInclude Include="..\runtime\JSLexicalEnvironment.h" />
     <ClInclude Include="..\runtime\JSArgumentsIterator.h" />
     <ClInclude Include="..\runtime\JSArray.h" />
     <ClInclude Include="..\runtime\JSArrayBuffer.h" />
@@ -1465,6 +1468,7 @@
     <ClInclude Include="..\runtime\JSCInlines.h" />
     <ClInclude Include="..\runtime\JSCJSValue.h" />
     <ClInclude Include="..\runtime\JSCJSValueInlines.h" />
+    <ClInclude Include="..\runtime\JSCallee.h" />
     <ClInclude Include="..\runtime\JSCell.h" />
     <ClInclude Include="..\runtime\JSConsole.h" />
     <ClInclude Include="..\runtime\JSDataView.h" />
@@ -1518,7 +1522,7 @@
     <ClInclude Include="..\runtime\JSUint32Array.h" />
     <ClInclude Include="..\runtime\JSUint8Array.h" />
     <ClInclude Include="..\runtime\JSUint8ClampedArray.h" />
-    <ClInclude Include="..\runtime\JSVariableObject.h" />
+    <ClInclude Include="..\runtime\JSEnvironmentRecord.h" />
     <ClInclude Include="..\runtime\JSWeakMap.h" />
     <ClInclude Include="..\runtime\JSWithScope.h" />
     <ClInclude Include="..\runtime\JSWrapperObject.h" />

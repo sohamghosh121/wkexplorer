@@ -36,6 +36,18 @@ set(webkit2_api_harness_SOURCES
     ${TESTWEBKITAPI_DIR}/efl/PlatformWebView.cpp
 )
 
+list(APPEND test_wtf_LIBRARIES
+    WebKit2
+)
+
+list(APPEND test_webcore_LIBRARIES
+    WebKit2
+)
+
+list(APPEND TestJavaScriptCore_LIBRARIES
+    WebKit2
+)
+
 # The list below works like a test expectation. Tests in the
 # test_{webkit2_api|webcore}_BINARIES list are added to the test runner and
 # tried on the bots on every build. Tests in test_{webkit2_api|webcore}_BINARIES
@@ -93,6 +105,7 @@ set(test_webkit2_api_BINARIES
     CoordinatedGraphics/WKViewRestoreZoomAndScrollBackForward
     CoordinatedGraphics/WKViewUserViewportToContents
     efl/WKViewClientWebProcessCallbacks
+    efl/WKViewScrollTo
 )
 
 set(test_webkit2_api_fail_BINARIES

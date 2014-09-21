@@ -250,6 +250,7 @@ NON_SVG_BINDING_IDLS = \
     $(WebCore)/css/WebKitCSSTransformValue.idl \
     $(WebCore)/css/WebKitCSSViewportRule.idl \
     $(WebCore)/dom/Attr.idl \
+    $(WebCore)/dom/AutocompleteErrorEvent.idl \
     $(WebCore)/dom/BeforeLoadEvent.idl \
     $(WebCore)/dom/BeforeUnloadEvent.idl \
     $(WebCore)/dom/CDATASection.idl \
@@ -1027,10 +1028,6 @@ XMLNames.cpp : dom/make_names.pl bindings/scripts/Hasher.pm bindings/scripts/Sta
 
 ifeq ($(findstring ENABLE_SVG_FONTS,$(FEATURE_DEFINES)), ENABLE_SVG_FONTS)
     SVG_FLAGS := $(SVG_FLAGS) ENABLE_SVG_FONTS=1
-endif
-
-ifeq ($(findstring ENABLE_FILTERS,$(FEATURE_DEFINES)), ENABLE_FILTERS)
-    SVG_FLAGS := $(SVG_FLAGS) ENABLE_FILTERS=1
 endif
 
 # SVG tag and attribute names (need to pass an extra flag if svg experimental features are enabled)

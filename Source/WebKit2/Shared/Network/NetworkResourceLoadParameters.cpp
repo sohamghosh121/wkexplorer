@@ -47,7 +47,8 @@ NetworkResourceLoadParameters::NetworkResourceLoadParameters()
     , shouldClearReferrerOnHTTPSToHTTPRedirect(true)
     , isMainResource(false)
     , defersLoading(false)
-    , shouldBufferResource(false)
+    , needsCertificateInfo(false)
+    , maximumBufferingTime(0_ms)
 {
 }
 
@@ -95,7 +96,8 @@ void NetworkResourceLoadParameters::encode(IPC::ArgumentEncoder& encoder) const
     encoder << shouldClearReferrerOnHTTPSToHTTPRedirect;
     encoder << isMainResource;
     encoder << defersLoading;
-    encoder << shouldBufferResource;
+    encoder << needsCertificateInfo;
+    encoder << maximumBufferingTime;
 }
 
 bool NetworkResourceLoadParameters::decode(IPC::ArgumentDecoder& decoder, NetworkResourceLoadParameters& result)
@@ -125,13 +127,20 @@ bool NetworkResourceLoadParameters::decode(IPC::ArgumentDecoder& decoder, Networ
             return false;
         result.request.setHTTPBody(formData.release());
 
-        if (!decoder.decode(result.requestBodySandboxExtensions))
+        SandboxExtension::HandleArray requestBodySandboxExtensionHandles;
+        if (!decoder.decode(requestBodySandboxExtensionHandles))
             return false;
+        for (size_t i = 0; i < requestBodySandboxExtensionHandles.size(); ++i) {
+            if (RefPtr<SandboxExtension> extension = SandboxExtension::create(requestBodySandboxExtensionHandles[i]))
+                result.requestBodySandboxExtensions.append(extension.release());
+        }
     }
 
     if (result.request.url().isLocalFile()) {
-        if (!decoder.decode(result.resourceSandboxExtension))
+        SandboxExtension::Handle resourceSandboxExtensionHandle;
+        if (!decoder.decode(resourceSandboxExtensionHandle))
             return false;
+        result.resourceSandboxExtension = SandboxExtension::create(resourceSandboxExtensionHandle);
     }
 
     if (!decoder.decodeEnum(result.contentSniffingPolicy))
@@ -146,7 +155,9 @@ bool NetworkResourceLoadParameters::decode(IPC::ArgumentDecoder& decoder, Networ
         return false;
     if (!decoder.decode(result.defersLoading))
         return false;
-    if (!decoder.decode(result.shouldBufferResource))
+    if (!decoder.decode(result.needsCertificateInfo))
+        return false;
+    if (!decoder.decode(result.maximumBufferingTime))
         return false;
 
     return true;

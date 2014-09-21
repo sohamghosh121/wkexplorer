@@ -431,7 +431,7 @@ CSSStyleRule* InspectorCSSAgent::asCSSStyleRule(CSSRule* rule)
 {
     if (rule->type() != CSSRule::STYLE_RULE)
         return nullptr;
-    return static_cast<CSSStyleRule*>(rule);
+    return toCSSStyleRule(rule);
 }
 
 InspectorCSSAgent::InspectorCSSAgent(InstrumentingAgents* instrumentingAgents, InspectorDOMAgent* domAgent)
@@ -681,11 +681,11 @@ void InspectorCSSAgent::getAllStyleSheets(ErrorString*, RefPtr<Inspector::Protoc
     styleInfos = Inspector::Protocol::Array<Inspector::Protocol::CSS::CSSStyleSheetHeader>::create();
     Vector<Document*> documents = m_domAgent->documents();
     for (Vector<Document*>::iterator it = documents.begin(); it != documents.end(); ++it) {
-        StyleSheetList* list = (*it)->styleSheets();
-        for (unsigned i = 0; i < list->length(); ++i) {
-            StyleSheet* styleSheet = list->item(i);
-            if (styleSheet->isCSSStyleSheet())
-                collectStyleSheets(static_cast<CSSStyleSheet*>(styleSheet), styleInfos.get());
+        StyleSheetList& list = (*it)->styleSheets();
+        for (unsigned i = 0; i < list.length(); ++i) {
+            StyleSheet& styleSheet = *list.item(i);
+            if (styleSheet.isCSSStyleSheet())
+                collectStyleSheets(&toCSSStyleSheet(styleSheet), styleInfos.get());
         }
     }
 }
@@ -862,7 +862,7 @@ void InspectorCSSAgent::getNamedFlowCollection(ErrorString* errorString, int doc
 
     m_namedFlowCollectionsRequested.add(documentNodeId);
 
-    Vector<RefPtr<WebKitNamedFlow>> namedFlowsVector = document->namedFlows()->namedFlows();
+    Vector<RefPtr<WebKitNamedFlow>> namedFlowsVector = document->namedFlows().namedFlows();
     RefPtr<Inspector::Protocol::Array<Inspector::Protocol::CSS::NamedFlow>> namedFlows = Inspector::Protocol::Array<Inspector::Protocol::CSS::NamedFlow>::create();
 
     for (Vector<RefPtr<WebKitNamedFlow>>::iterator it = namedFlowsVector.begin(); it != namedFlowsVector.end(); ++it)
@@ -914,12 +914,12 @@ int InspectorCSSAgent::documentNodeWithRequestedFlowsId(Document* document)
 
 void InspectorCSSAgent::collectStyleSheets(CSSStyleSheet* styleSheet, Inspector::Protocol::Array<Inspector::Protocol::CSS::CSSStyleSheetHeader>* result)
 {
-    InspectorStyleSheet* inspectorStyleSheet = bindStyleSheet(static_cast<CSSStyleSheet*>(styleSheet));
+    InspectorStyleSheet* inspectorStyleSheet = bindStyleSheet(styleSheet);
     result->addItem(inspectorStyleSheet->buildObjectForStyleSheetInfo());
     for (unsigned i = 0, size = styleSheet->length(); i < size; ++i) {
         CSSRule* rule = styleSheet->item(i);
         if (rule->type() == CSSRule::IMPORT_RULE) {
-            CSSStyleSheet* importedStyleSheet = static_cast<CSSImportRule*>(rule)->styleSheet();
+            CSSStyleSheet* importedStyleSheet = toCSSImportRule(rule)->styleSheet();
             if (importedStyleSheet)
                 collectStyleSheets(importedStyleSheet, result);
         }

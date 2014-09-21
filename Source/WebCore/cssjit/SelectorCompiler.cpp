@@ -37,6 +37,7 @@
 #include "FunctionCall.h"
 #include "HTMLDocument.h"
 #include "HTMLNames.h"
+#include "HTMLParserIdioms.h"
 #include "InspectorInstrumentation.h"
 #include "NodeRenderStyle.h"
 #include "QualifiedName.h"
@@ -157,8 +158,8 @@ struct SelectorFragment {
     unsigned tagNameNotMatchedBacktrackingStartWidthFromIndirectAdjacent;
     unsigned widthFromIndirectAdjacent;
 
-    FunctionType appendUnoptimizedPseudoClassWithContext(bool (*matcher)(const CheckingContext&));
-    
+    FunctionType appendUnoptimizedPseudoClassWithContext(bool (*matcher)(const SelectorChecker::CheckingContext&));
+
     const QualifiedName* tagName;
     const AtomicString* id;
     const AtomicString* langFilter;
@@ -363,7 +364,7 @@ static inline bool fragmentMatchesTheRightmostElement(SelectorContext selectorCo
     return fragment.relationToRightFragment == FragmentRelation::Rightmost && fragment.positionInRootFragments == FragmentPositionInRootFragments::Rightmost;
 }
 
-FunctionType SelectorFragment::appendUnoptimizedPseudoClassWithContext(bool (*matcher)(const CheckingContext&))
+FunctionType SelectorFragment::appendUnoptimizedPseudoClassWithContext(bool (*matcher)(const SelectorChecker::CheckingContext&))
 {
     unoptimizedPseudoClassesWithContext.append(JSC::FunctionPtr(matcher));
     return FunctionType::SelectorCheckerWithCheckingContext;
@@ -376,33 +377,33 @@ static inline FunctionType addScrollbarPseudoClassType(const CSSSelector& select
         fragment.unoptimizedPseudoClasses.append(JSC::FunctionPtr(isWindowInactive));
         return FunctionType::SimpleSelectorChecker;
     case CSSSelector::PseudoClassDisabled:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesDisabledPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesDisabledPseudoClass);
     case CSSSelector::PseudoClassEnabled:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesEnabledPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesEnabledPseudoClass);
     case CSSSelector::PseudoClassHorizontal:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesHorizontalPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesHorizontalPseudoClass);
     case CSSSelector::PseudoClassVertical:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesVerticalPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesVerticalPseudoClass);
     case CSSSelector::PseudoClassDecrement:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesDecrementPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesDecrementPseudoClass);
     case CSSSelector::PseudoClassIncrement:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesIncrementPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesIncrementPseudoClass);
     case CSSSelector::PseudoClassStart:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesStartPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesStartPseudoClass);
     case CSSSelector::PseudoClassEnd:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesEndPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesEndPseudoClass);
     case CSSSelector::PseudoClassDoubleButton:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesDoubleButtonPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesDoubleButtonPseudoClass);
     case CSSSelector::PseudoClassSingleButton:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesSingleButtonPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesSingleButtonPseudoClass);
     case CSSSelector::PseudoClassNoButton:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesNoButtonPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesNoButtonPseudoClass);
     case CSSSelector::PseudoClassCornerPresent:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesCornerPresentPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesCornerPresentPseudoClass);
     case CSSSelector::PseudoClassActive:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesActivePseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesActivePseudoClass);
     case CSSSelector::PseudoClassHover:
-        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesHoverPseudoClass<CheckingContext>);
+        return fragment.appendUnoptimizedPseudoClassWithContext(scrollbarMatchesHoverPseudoClass);
     default:
         return FunctionType::CannotMatchAnything;
     }
@@ -705,7 +706,7 @@ static FunctionType constructFragments(const CSSSelector* rootSelector, Selector
             return FunctionType::CannotMatchAnything;
         }
 
-        switch (selector->m_match) {
+        switch (selector->match()) {
         case CSSSelector::Tag:
             ASSERT(!fragment.tagName);
             fragment.tagName = &(selector->tagQName());
@@ -777,7 +778,7 @@ static FunctionType constructFragments(const CSSSelector* rootSelector, Selector
             break;
         }
         case CSSSelector::List:
-            if (selector->value().contains(' '))
+            if (selector->value().find(isHTMLSpace<UChar>) != notFound)
                 return FunctionType::CannotMatchAnything;
             FALLTHROUGH;
         case CSSSelector::Begin:
@@ -1350,14 +1351,6 @@ static bool shouldMarkStyleIsAffectedByPreviousSibling(const SelectorFragment& f
 
 void SelectorCodeGenerator::generateSelectorChecker()
 {
-    StackAllocator::StackReferenceVector calleeSavedRegisterStackReferences;
-    bool reservedCalleeSavedRegisters = false;
-    unsigned availableRegisterCount = m_registerAllocator.availableRegisterCount();
-    unsigned minimumRegisterCountForAttributes = minimumRegisterRequirements(m_selectorFragments);
-#if CSS_SELECTOR_JIT_DEBUGGING
-    dataLogF("Compiling with minimum required register count %u\n", minimumRegisterCountForAttributes);
-#endif
-
     Assembler::JumpList failureOnFunctionEntry;
     // Test selector's pseudo element equals to requested PseudoId.
     if (m_selectorContext != SelectorContext::QuerySelector && m_functionType == FunctionType::SelectorCheckerWithCheckingContext) {
@@ -1365,12 +1358,20 @@ void SelectorCodeGenerator::generateSelectorChecker()
         generateRequestedPseudoElementEqualsToSelectorPseudoElement(failureOnFunctionEntry, m_selectorFragments.first(), checkingContextRegister);
     }
 
+    unsigned minimumRegisterCount = minimumRegisterRequirements(m_selectorFragments);
+    unsigned availableRegisterCount = m_registerAllocator.reserveCallerSavedRegisters(minimumRegisterCount);
+#if CSS_SELECTOR_JIT_DEBUGGING
+    dataLogF("Compiling with minimum required register count %u\n", minimumRegisterCount);
+#endif
+
     bool needsEpilogue = generatePrologue();
 
-    ASSERT(minimumRegisterCountForAttributes <= maximumRegisterCount);
-    if (availableRegisterCount < minimumRegisterCountForAttributes) {
+    StackAllocator::StackReferenceVector calleeSavedRegisterStackReferences;
+    bool reservedCalleeSavedRegisters = false;
+    ASSERT(minimumRegisterCount <= maximumRegisterCount);
+    if (availableRegisterCount < minimumRegisterCount) {
         reservedCalleeSavedRegisters = true;
-        calleeSavedRegisterStackReferences = m_stackAllocator.push(m_registerAllocator.reserveCalleeSavedRegisters(minimumRegisterCountForAttributes - availableRegisterCount));
+        calleeSavedRegisterStackReferences = m_stackAllocator.push(m_registerAllocator.reserveCalleeSavedRegisters(minimumRegisterCount - availableRegisterCount));
     }
 
     m_registerAllocator.allocateRegister(elementAddressRegister);
@@ -1610,7 +1611,7 @@ void SelectorCodeGenerator::addFlagsToElementStyleFromContext(Assembler::Registe
     ASSERT(m_selectorContext != SelectorContext::QuerySelector);
 
     LocalRegister childStyle(m_registerAllocator);
-    m_assembler.loadPtr(Assembler::Address(checkingContext, OBJECT_OFFSETOF(CheckingContext, elementStyle)), childStyle);
+    m_assembler.loadPtr(Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, elementStyle)), childStyle);
 
     // FIXME: We should look into doing something smart in MacroAssembler instead.
     Assembler::Address flagAddress(childStyle, RenderStyle::noninheritedFlagsMemoryOffset() + RenderStyle::NonInheritedFlags::flagsMemoryOffset());
@@ -1666,7 +1667,7 @@ Assembler::Jump SelectorCodeGenerator::branchOnResolvingModeWithCheckingContext(
 {
     // Depend on the specified resolving mode and our current mode, branch.
     static_assert(sizeof(SelectorChecker::Mode) == 1, "We generate a byte load/test for the SelectorChecker::Mode.");
-    return m_assembler.branch8(condition, Assembler::Address(checkingContext, OBJECT_OFFSETOF(CheckingContext, resolvingMode)), Assembler::TrustedImm32(static_cast<std::underlying_type<SelectorChecker::Mode>::type>(mode)));
+    return m_assembler.branch8(condition, Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, resolvingMode)), Assembler::TrustedImm32(static_cast<std::underlying_type<SelectorChecker::Mode>::type>(mode)));
 
 }
 
@@ -2177,7 +2178,7 @@ void SelectorCodeGenerator::generateElementAttributeMatching(Assembler::JumpList
 
     successCases.link(&m_assembler);
 
-    if (attributeSelector.m_match != CSSSelector::Set) {
+    if (attributeSelector.match() != CSSSelector::Set) {
         // We make the assumption that name matching fails in most cases and we keep value matching outside
         // of the loop. We re-enter the loop if needed.
         // FIXME: exact case sensitive value matching is so simple that it should be done in the loop.
@@ -2252,9 +2253,9 @@ static bool attributeValueSpaceSeparetedListContains(const Attribute* attribute,
             foundPos = value.findIgnoringCase(expectedString, startSearchAt);
         if (foundPos == notFound)
             return false;
-        if (!foundPos || value[foundPos - 1] == ' ') {
+        if (!foundPos || isHTMLSpace(value[foundPos - 1])) {
             unsigned endStr = foundPos + expectedString->length();
-            if (endStr == value.length() || value[endStr] == ' ')
+            if (endStr == value.length() || isHTMLSpace(value[endStr]))
                 return true;
         }
         startSearchAt = foundPos + 1;
@@ -2269,7 +2270,7 @@ void SelectorCodeGenerator::generateElementAttributeValueMatching(Assembler::Jum
     ASSERT(!expectedValue.isNull());
     bool defaultToCaseSensitiveValueMatch = attributeInfo.canDefaultToCaseSensitiveValueMatch();
 
-    switch (attributeSelector.m_match) {
+    switch (attributeSelector.match()) {
     case CSSSelector::Begin:
         generateElementAttributeFunctionCallValueMatching(failureCases, currentAttributeAddress, expectedValue, defaultToCaseSensitiveValueMatch, attributeValueBeginsWith<CaseSensitive>, attributeValueBeginsWith<CaseInsensitive>);
         break;
@@ -2406,7 +2407,7 @@ static bool elementIsActive(Element* element)
     return element->active() || InspectorInstrumentation::forcePseudoState(element, CSSSelector::PseudoClassActive);
 }
 
-static bool elementIsActiveForStyleResolution(Element* element, const CheckingContext* checkingContext)
+static bool elementIsActiveForStyleResolution(Element* element, const SelectorChecker::CheckingContext* checkingContext)
 {
     if (checkingContext->resolvingMode == SelectorChecker::Mode::ResolvingStyle)
         element->setChildrenAffectedByActive();
@@ -2477,7 +2478,7 @@ static void setElementStyleIsAffectedByEmpty(Element* element)
     element->setStyleAffectedByEmpty();
 }
 
-static void setElementStyleFromContextIsAffectedByEmptyAndUpdateRenderStyleIfNecessary(CheckingContext* context, bool isEmpty)
+static void setElementStyleFromContextIsAffectedByEmptyAndUpdateRenderStyleIfNecessary(SelectorChecker::CheckingContext* context, bool isEmpty)
 {
     ASSERT(context->elementStyle);
     context->elementStyle->setEmptyState(isEmpty);
@@ -2585,7 +2586,7 @@ static bool elementIsHovered(Element* element)
     return element->hovered() || InspectorInstrumentation::forcePseudoState(element, CSSSelector::PseudoClassHover);
 }
 
-static bool elementIsHoveredForStyleResolution(Element* element, const CheckingContext* checkingContext)
+static bool elementIsHoveredForStyleResolution(Element* element, const SelectorChecker::CheckingContext* checkingContext)
 {
     if (checkingContext->resolvingMode == SelectorChecker::Mode::ResolvingStyle)
         element->setChildrenAffectedByHover();
@@ -2776,7 +2777,7 @@ void SelectorCodeGenerator::generateElementIsOnlyChild(Assembler::JumpList& fail
 }
 
 #if ENABLE(CSS_SELECTORS_LEVEL4)
-static bool makeContextStyleUniqueIfNecessaryAndTestIsPlaceholderShown(Element* element, const CheckingContext* checkingContext)
+static bool makeContextStyleUniqueIfNecessaryAndTestIsPlaceholderShown(Element* element, const SelectorChecker::CheckingContext* checkingContext)
 {
     if (isHTMLTextFormControlElement(*element)) {
         if (checkingContext->resolvingMode == SelectorChecker::Mode::ResolvingStyle)
@@ -2786,7 +2787,7 @@ static bool makeContextStyleUniqueIfNecessaryAndTestIsPlaceholderShown(Element* 
     return false;
 }
 
-static bool makeElementStyleUniqueIfNecessaryAndTestIsPlaceholderShown(Element* element, const CheckingContext* checkingContext)
+static bool makeElementStyleUniqueIfNecessaryAndTestIsPlaceholderShown(Element* element, const SelectorChecker::CheckingContext* checkingContext)
 {
     if (isHTMLTextFormControlElement(*element)) {
         if (checkingContext->resolvingMode == SelectorChecker::Mode::ResolvingStyle) {
@@ -3077,10 +3078,10 @@ void SelectorCodeGenerator::generateRequestedPseudoElementEqualsToSelectorPseudo
     // Otherwise, if the requested pseudoId is not NOPSEUDO, the requested pseudoId need to equal to the pseudo element of the rightmost fragment.
     if (fragmentMatchesTheRightmostElement(m_selectorContext, fragment)) {
         if (!fragment.pseudoElementSelector)
-            failureCases.append(m_assembler.branch8(Assembler::NotEqual, Assembler::Address(checkingContext, OBJECT_OFFSETOF(CheckingContext, pseudoId)), Assembler::TrustedImm32(NOPSEUDO)));
+            failureCases.append(m_assembler.branch8(Assembler::NotEqual, Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, pseudoId)), Assembler::TrustedImm32(NOPSEUDO)));
         else {
-            Assembler::Jump skip = m_assembler.branch8(Assembler::Equal, Assembler::Address(checkingContext, OBJECT_OFFSETOF(CheckingContext, pseudoId)), Assembler::TrustedImm32(NOPSEUDO));
-            failureCases.append(m_assembler.branch8(Assembler::NotEqual, Assembler::Address(checkingContext, OBJECT_OFFSETOF(CheckingContext, pseudoId)), Assembler::TrustedImm32(CSSSelector::pseudoId(fragment.pseudoElementSelector->pseudoElementType()))));
+            Assembler::Jump skip = m_assembler.branch8(Assembler::Equal, Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, pseudoId)), Assembler::TrustedImm32(NOPSEUDO));
+            failureCases.append(m_assembler.branch8(Assembler::NotEqual, Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, pseudoId)), Assembler::TrustedImm32(CSSSelector::pseudoId(fragment.pseudoElementSelector->pseudoElementType()))));
             skip.link(&m_assembler);
         }
     }
@@ -3099,7 +3100,7 @@ void SelectorCodeGenerator::generateElementIsScopeRoot(Assembler::JumpList& fail
 
     LocalRegister scope(m_registerAllocator);
     loadCheckingContext(scope);
-    m_assembler.loadPtr(Assembler::Address(scope, OBJECT_OFFSETOF(CheckingContext, scope)), scope);
+    m_assembler.loadPtr(Assembler::Address(scope, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, scope)), scope);
 
     Assembler::Jump scopeIsNotNull = m_assembler.branchTestPtr(Assembler::NonZero, scope);
 
@@ -3131,7 +3132,7 @@ void SelectorCodeGenerator::generateMarkPseudoStyleForPseudoElement(Assembler::J
     Assembler::JumpList successCases;
 
     // When the requested pseudoId isn't NOPSEUDO, there's no need to mark the pseudo element style.
-    successCases.append(m_assembler.branch8(Assembler::NotEqual, Assembler::Address(checkingContext, OBJECT_OFFSETOF(CheckingContext, pseudoId)), Assembler::TrustedImm32(NOPSEUDO)));
+    successCases.append(m_assembler.branch8(Assembler::NotEqual, Assembler::Address(checkingContext, OBJECT_OFFSETOF(SelectorChecker::CheckingContext, pseudoId)), Assembler::TrustedImm32(NOPSEUDO)));
 
     // When resolving mode is CollectingRulesIgnoringVirtualPseudoElements, there's no need to mark the pseudo element style.
     successCases.append(branchOnResolvingModeWithCheckingContext(Assembler::Equal, SelectorChecker::Mode::CollectingRulesIgnoringVirtualPseudoElements, checkingContext));

@@ -68,7 +68,7 @@ CurlCacheManager::~CurlCacheManager()
 void CurlCacheManager::setCacheDirectory(const String& directory)
 {
     m_cacheDir = directory;
-    m_cacheDir.append("/");
+
     if (m_cacheDir.isEmpty()) {
         LOG(Network, "Cache Error: Cache location is not set! CacheManager disabled.\n");
         m_disabled = true;
@@ -82,6 +82,8 @@ void CurlCacheManager::setCacheDirectory(const String& directory)
             return;
         }
     }
+
+    m_cacheDir.append("/");
 
     m_disabled = false;
     loadIndex();
@@ -216,6 +218,7 @@ void CurlCacheManager::didReceiveResponse(ResourceHandle& job, ResourceResponse&
         auto cacheEntry = std::make_unique<CurlCacheEntry>(url, &job, m_cacheDir);
         bool cacheable = cacheEntry->parseResponseHeaders(response);
         if (cacheable) {
+            cacheEntry->setIsLoading(true);
             m_LRUEntryList.prependOrMoveToFirst(url);
             m_index.set(url, WTF::move(cacheEntry));
             saveResponseHeaders(url, response);

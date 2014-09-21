@@ -56,7 +56,7 @@ static Eina_Bool fullscreen_enabled = EINA_FALSE;
 static Eina_Bool spell_checking_enabled = EINA_FALSE;
 static Eina_Bool web_security_enabled = EINA_TRUE;
 static Eina_Bool touch_events_enabled = EINA_FALSE;
-static Eina_Bool fixed_layout_enabled = EINA_FALSE;
+static Eina_Bool fixed_layout_enabled = EINA_TRUE;
 static Eina_Bool separated_process_enabled = EINA_FALSE;
 static Eina_Bool longpress_enabled = EINA_FALSE;
 static int window_width = 800;
@@ -288,6 +288,38 @@ on_mouse_out(void *user_data, Evas *e, Evas_Object *ewk_view, void *event_info)
 }
 
 static void
+on_mouse_wheel(void *user_data, Evas *e, Evas_Object *ewk_view, void *event_info)
+{
+    Browser_Window *window = (Browser_Window *)user_data;
+    const Evas_Modifier *mod = evas_key_modifier_get(e);
+    Evas_Event_Mouse_Wheel *ev = (Evas_Event_Mouse_Wheel *)event_info;
+    Eina_Bool shiftPressed = evas_key_modifier_is_set(mod, "Shift");
+    Eina_Bool ctrlPressed = evas_key_modifier_is_set(mod, "Control");
+
+    if (!shiftPressed && !ctrlPressed)
+        return;
+
+    /* navigate history or zoom web page based on mouse wheel scroll action with shift or control key */
+    if (shiftPressed) {
+        if (ev->z == -1 && ewk_view_forward_possible(ewk_view)) {
+            ewk_view_forward(ewk_view);
+            elm_object_disabled_set(window->forward_button, !ewk_view_forward_possible(ewk_view));
+        } else if (ev->z == 1 && ewk_view_back_possible(ewk_view)) {
+            ewk_view_back(ewk_view);
+            elm_object_disabled_set(window->back_button, !ewk_view_back_possible(ewk_view));       
+        }
+    } else if (ctrlPressed) {
+        if (ev->z == -1 && zoom_level_set(ewk_view, window->current_zoom_level + 1)) {
+            window->current_zoom_level++;
+            info("Zoom in (Ctrl + 'scroll up') was pressed, zoom level became %.2f", zoomLevels[window->current_zoom_level]);
+        } else if (ev->z == 1 && zoom_level_set(ewk_view, window->current_zoom_level - 1)) {
+            window->current_zoom_level--;
+            info("Zoom out (Ctrl + 'scroll down') was pressed, zoom level became %.2f", zoomLevels[window->current_zoom_level]);
+        }
+    }
+}
+
+static void
 on_window_resize(void *user_data, Evas *e, Evas_Object *elm_window, void *event_info)
 {
     Browser_Window *window = (Browser_Window *)user_data;
@@ -344,6 +376,7 @@ static void window_free(Browser_Window *window)
     evas_object_event_callback_del(window->ewk_view, EVAS_CALLBACK_MOUSE_IN, on_mouse_in);
     evas_object_event_callback_del(window->ewk_view, EVAS_CALLBACK_MOUSE_OUT, on_mouse_out);
     evas_object_event_callback_del(window->ewk_view, EVAS_CALLBACK_MOUSE_MOVE, on_mouse_move);
+    evas_object_event_callback_del(window->ewk_view, EVAS_CALLBACK_MOUSE_WHEEL, on_mouse_wheel);
 
     evas_object_event_callback_del(window->elm_window, EVAS_CALLBACK_RESIZE, on_window_resize);
 
@@ -1960,6 +1993,8 @@ static Browser_Window *window_create(Evas_Object *opener, int width, int height)
     window->back_button = create_toolbar_button(window->elm_window, "arrow_left");
     evas_object_smart_callback_add(window->back_button, "clicked", on_back_button_clicked, window);
     evas_object_smart_callback_add(window->back_button, "repeated", on_back_button_longpress, window);
+    elm_object_tooltip_text_set(window->back_button, "Click to go back, longpress to see session history");
+    elm_object_tooltip_window_mode_set(window->back_button, EINA_TRUE);
     elm_object_disabled_set(window->back_button, EINA_TRUE);
     evas_object_size_hint_weight_set(window->back_button, 0.0, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(window->back_button, 0.0, 0.5);
@@ -1970,6 +2005,8 @@ static Browser_Window *window_create(Evas_Object *opener, int width, int height)
     window->forward_button = create_toolbar_button(window->elm_window, "arrow_right");
     evas_object_smart_callback_add(window->forward_button, "clicked", on_forward_button_clicked, window);
     evas_object_smart_callback_add(window->forward_button, "repeated", on_forward_button_longpress, window);
+    elm_object_tooltip_text_set(window->forward_button, "Click to go forward, longpress to see session history");
+    elm_object_tooltip_window_mode_set(window->forward_button, EINA_TRUE);
     elm_object_disabled_set(window->forward_button, EINA_TRUE);
     evas_object_size_hint_weight_set(window->forward_button, 0.0, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(window->forward_button, 0.0, 0.5);
@@ -1993,6 +2030,8 @@ static Browser_Window *window_create(Evas_Object *opener, int width, int height)
     /* Create Refresh button */
     Evas_Object *refresh_button = create_toolbar_button(window->elm_window, "refresh");
     evas_object_smart_callback_add(refresh_button, "clicked", on_refresh_button_clicked, window);
+    elm_object_tooltip_text_set(refresh_button, "Reload page");
+    elm_object_tooltip_window_mode_set(refresh_button, EINA_TRUE);
     evas_object_size_hint_weight_set(refresh_button, 0.0, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(refresh_button, 1.0, 0.5);
     elm_box_pack_end(horizontal_layout, refresh_button);
@@ -2001,6 +2040,8 @@ static Browser_Window *window_create(Evas_Object *opener, int width, int height)
     /* Create Stop button */
     Evas_Object *stop_button = create_toolbar_button(window->elm_window, "close");
     evas_object_smart_callback_add(stop_button, "clicked", on_stop_button_clicked, window);
+    elm_object_tooltip_text_set(stop_button, "Stop page load");
+    elm_object_tooltip_window_mode_set(stop_button, EINA_TRUE);
     evas_object_size_hint_weight_set(stop_button, 0.0, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(stop_button, 1.0, 0.5);
     elm_box_pack_end(horizontal_layout, stop_button);
@@ -2009,6 +2050,8 @@ static Browser_Window *window_create(Evas_Object *opener, int width, int height)
     /* Create Home button */
     Evas_Object *home_button = create_toolbar_button(window->elm_window, "home");
     evas_object_smart_callback_add(home_button, "clicked", on_home_button_clicked, window);
+    elm_object_tooltip_text_set(home_button, "Home page");
+    elm_object_tooltip_window_mode_set(home_button, EINA_TRUE);
     evas_object_size_hint_weight_set(home_button, 0.0, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(home_button, 1.0, 0.5);
     elm_box_pack_end(horizontal_layout, home_button);
@@ -2174,6 +2217,7 @@ static Browser_Window *window_create(Evas_Object *opener, int width, int height)
     evas_object_event_callback_add(window->ewk_view, EVAS_CALLBACK_MOUSE_IN, on_mouse_in, window);
     evas_object_event_callback_add(window->ewk_view, EVAS_CALLBACK_MOUSE_OUT, on_mouse_out, window);
     evas_object_event_callback_add(window->ewk_view, EVAS_CALLBACK_MOUSE_MOVE, on_mouse_move, window);
+    evas_object_event_callback_add(window->ewk_view, EVAS_CALLBACK_MOUSE_WHEEL, on_mouse_wheel, window);
     evas_object_event_callback_add(window->elm_window, EVAS_CALLBACK_RESIZE, on_window_resize, window);
     
     elm_button_autorepeat_set(window->back_button, EINA_TRUE);

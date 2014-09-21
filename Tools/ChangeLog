@@ -1,3 +1,750 @@
+2014-09-19  Joseph Pecoraro  <pecoraro@apple.com>
+
+        JSStringRef leak on the leaks bot allocation under selectTextWithCriteriaCallback
+        https://bugs.webkit.org/show_bug.cgi?id=136974
+
+        Reviewed by Chris Fleizach.
+
+        * DumpRenderTree/AccessibilityUIElement.cpp:
+        (selectTextWithCriteriaCallback):
+        Be sure to release the string if it was allocated.
+
+2014-09-19  Alexey Proskuryakov  <ap@apple.com>
+
+        build.webkit.org/dashboard: Pending builds don't show up when there is a commit with no comments
+        https://bugs.webkit.org/show_bug.cgi?id=136966
+
+        Reviewed by Daniel Bates.
+
+        * BuildSlaveSupport/build.webkit.org-config/public_html/dashboard/Scripts/Trac.js:
+        (Trac.prototype._convertCommitInfoElementToObject): Tolerate these horrible commits.
+
+2014-09-19  Gyuyoung Kim  <gyuyoung.kim@samsung.com>
+
+        [CoordinatedGraphics][EFL] window.scrollTo(x, y) doesn't work when fixed layout is enabled
+        https://bugs.webkit.org/show_bug.cgi?id=136917
+
+        Reviewed by Darin Adler.
+
+        Added WKViewScrollTo.cpp and scrollTo.html to test this issue.
+
+        * TestWebKitAPI/PlatformEfl.cmake:
+        * TestWebKitAPI/Tests/WebKit2/efl/WKViewScrollTo.cpp: Added.
+        (TestWebKitAPI::didFinishLoadForFrame):
+        (TestWebKitAPI::TEST):
+        * TestWebKitAPI/Tests/WebKit2/efl/scrollTo.html: Added.
+
+2014-09-19  Daniel Bates  <dabates@apple.com>
+
+        Always assume internal SDK when building configuration Production
+        https://bugs.webkit.org/show_bug.cgi?id=136925
+        <rdar://problem/18362399>
+
+        Reviewed by Dan Bernstein.
+
+        * DumpRenderTree/mac/Configurations/DebugRelease.xcconfig:
+        * MiniBrowser/Configurations/DebugRelease.xcconfig:
+        * TestWebKitAPI/Configurations/DebugRelease.xcconfig:
+        * WebKitTestRunner/Configurations/DebugRelease.xcconfig:
+
+2014-09-19  Youenn Fablet  <youenn.fablet@crf.canon.fr>
+
+        WTR and DRT didReceiveAuthenticationChallengeInFrame should print messages consistently
+        https://bugs.webkit.org/show_bug.cgi?id=136847
+
+        Added protection space host and port logging to WTR didReceiveAuthenticationChallengeInFrame.
+
+        Reviewed by Alexey Proskuryakov.
+
+        * WebKitTestRunner/TestController.cpp:
+        (WTR::TestController::didReceiveAuthenticationChallengeInFrame):
+
+2014-09-19  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        [GTK] Missing inspector files in the tarball
+        https://bugs.webkit.org/show_bug.cgi?id=136952
+
+        Reviewed by Gustavo Noronha Silva.
+
+        * gtk/manifest.txt: Add
+        Source/WebInspectorUI/Localizations/en.lproj/localizedStrings.js
+        to the tarball.
+
+2014-09-19  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        Webkitgtk 2.5.3: tarball contains APPLE LICENSE file - stating not distributable
+        https://bugs.webkit.org/show_bug.cgi?id=136632
+
+        Reviewed by Gustavo Noronha Silva.
+
+        * gtk/generate-inspector-gresource-manifest.py: Use an alias for
+        the gtk icons.
+        * gtk/manifest.txt: Only include the free icons in the tarball.
+
+2014-09-19  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        [GTK] generate-inspector-gresource-manifest.py should receive the list of files from the makefile
+        https://bugs.webkit.org/show_bug.cgi?id=136943
+
+        Reviewed by Philippe Normand.
+
+        Update the script to receive the list of files from the command
+        line instead of scanning the given directories.
+
+        * gtk/generate-inspector-gresource-manifest.py:
+        (get_filenames): Convert filenames to use relative paths.
+        (find_all_files_in_directory): Deleted.
+        (find_all_files_in_directory.select_file): Deleted.
+
+2014-09-18  Tanay C  <tanay.c@samsung.com>
+
+        [EFL][WK2] Minibrowser : Support Zoom on Control key + scroll
+        https://bugs.webkit.org/show_bug.cgi?id=136739
+
+        Reviewed by Gyuyoung Kim.
+
+        * MiniBrowser/efl/main.c: Add support for zoom on control key + mouse scroll
+        (on_mouse_wheel): Modified.
+
+2014-09-18  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        [GTK] Dot not allow to create delete-on-destroy GMainLoopSources
+        https://bugs.webkit.org/show_bug.cgi?id=136923
+
+        Reviewed by Gustavo Noronha Silva.
+
+        * TestWebKitAPI/Tests/WTF/gobject/GMainLoopSource.cpp:
+        (TestWebKitAPI::TEST): Use the new API that doesn't allow to use
+        the source.
+
+2014-09-18  Csaba Osztrogonác  <ossy@webkit.org>
+
+        Fix countFailures of RunLLINTCLoopTests and Run32bitJSCTests (II)
+        https://bugs.webkit.org/show_bug.cgi?id=136856
+
+        Reviewed by Darin Adler.
+
+        * BuildSlaveSupport/build.webkit.org-config/master.cfg:
+        (RunLLINTCLoopTests.countFailures):
+        (Run32bitJSCTests.countFailures):
+        * BuildSlaveSupport/build.webkit.org-config/mastercfg_unittest.py:
+        (RunLLINTCLoopTestsTest.test_failures):
+        (RunLLINTCLoopTestsTest.test_failure):
+        (RunLLINTCLoopTestsTest.test_no_failure):
+        (Run32bitJSCTestsTest.test_failures):
+        (Run32bitJSCTestsTest.test_failure):
+        (Run32bitJSCTestsTest.test_no_failure):
+
+2014-09-18  Zan Dobersek  <zdobersek@igalia.com>
+
+        GMainLoopSource is exposed to race conditions
+        https://bugs.webkit.org/show_bug.cgi?id=135800
+
+        Reviewed by Carlos Garcia Campos.
+
+        Add unit tests for GMainLoopSource.
+
+        The tests check correct behavior of GMainLoopSource in various conditions --
+        from the most simple rescheduling to rescheduling during dispatch, cancelling
+        or destroying the GMainLoopSource during dispatch, proper destroy callback
+        dispatching etc.
+
+        Scheduling both void (one-time) and bool (repeatable) callbacks is tested.
+        State of the GMainLoopSource object (either ready, sheduled or active) is
+        thoroughly tested throughout the lifetime of that object.
+
+        Still missing are tests for socket callbacks, which are a bit trickier because
+        they rely on a GSocket object. The delete-on-destroy GMainLoopSource objects
+        are also not tested thoroughly, simply because it is at the moment impossible
+        to test that the objects are actually destroyed when the corresponding source
+        is finally deleted.
+
+        * TestWebKitAPI/PlatformGTK.cmake:
+        * TestWebKitAPI/Tests/WTF/gobject/GMainLoopSource.cpp: Added.
+        (TestWebKitAPI::GMainLoopSourceTest::GMainLoopSourceTest):
+        (TestWebKitAPI::GMainLoopSourceTest::~GMainLoopSourceTest):
+        (TestWebKitAPI::GMainLoopSourceTest::runLoop):
+        (TestWebKitAPI::GMainLoopSourceTest::delayedFinish):
+        (TestWebKitAPI::GMainLoopSourceTest::finish):
+        (TestWebKitAPI::GMainLoopSourceTest::source):
+        (TestWebKitAPI::TEST):
+
+2014-09-17  Ryuan Choi  <ryuan.choi@gmail.com>
+
+        Unreviewed, Update my email in contributors.json
+
+        * Scripts/webkitpy/common/config/contributors.json:
+
+2014-09-17  Daniel Bates  <dabates@apple.com>
+
+        Unreviewed, rolling out r173695.
+
+        Broke building third-party Legacy WebKit apps; will
+        investigate offline
+
+        Reverted changeset:
+
+        "[iOS] Make WebCore build with public iOS SDK"
+        https://bugs.webkit.org/show_bug.cgi?id=136487
+        http://trac.webkit.org/changeset/173695
+
+2014-09-17  Daniel Bates  <dabates@apple.com>
+
+        [iOS] Make WebCore build with public iOS SDK
+        https://bugs.webkit.org/show_bug.cgi?id=136487
+
+        Reviewed by David Kilzer.
+
+        Substitute <WebCore/MachVMSPI.h> for <mach/mach_vm.h>.
+
+        * DumpRenderTree/mac/CheckedMalloc.cpp:
+
+2014-09-17  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        [GTK] WebKitWebView::load-failed-with-tls-errors should receive the failing URI instead of a host
+        https://bugs.webkit.org/show_bug.cgi?id=136889
+
+        Reviewed by Gustavo Noronha Silva.
+
+        * TestWebKitAPI/Tests/WebKit2Gtk/TestSSL.cpp:
+        (testLoadFailedWithTLSErrors): Check that LoadFailedWithTLSErrors
+        event was added to the events vector.
+        * TestWebKitAPI/gtk/WebKit2Gtk/LoadTrackingTest.cpp:
+        (loadFailedCallback): Do not assume the web view URI is the
+        failing URI when the load fails before the committed state.
+        (loadFailedWithTLSErrorsCallback): Handle the case of load failure
+        because of TLS errors can call LoadTrackingTest::loadFailedWithTLSErrors.
+        (LoadTrackingTest::LoadTrackingTest): Connect to WebKitWebView::load-failed-with-tls-errors.
+        (LoadTrackingTest::loadFailedWithTLSErrors): Add
+        LoadFailedWithTLSErrors event to the events vector.
+        * TestWebKitAPI/gtk/WebKit2Gtk/LoadTrackingTest.h:
+
+2014-09-17  Renato Nagy  <rnagy@inf.u-szeged.hu>
+
+        [EFL][GTK] Remove WebKit1 related codes
+        https://bugs.webkit.org/show_bug.cgi?id=136853
+
+        Reviewed by Csaba Osztrogonác.
+
+        Gtk and EFL WebKit1 ports no longer exist. Webkit1 related codes were deleted
+        from scripts.
+
+        * BuildSlaveSupport/build.webkit.org-config/config.json:
+        * BuildSlaveSupport/build.webkit.org-config/master.cfg:
+        (Compile32bitJSC):
+        (BuildAndTestWebKit2Factory):
+        (CompileWebKit1Only): Deleted.
+        (CompileWebKit2Only): Deleted.
+        (BuildAndTestWebKit1OnlyFactory): Deleted.
+        (BuildAndTestWebKit2OnlyFactory): Deleted.
+        * Scripts/build-webkit:
+        * Scripts/webkitperl/webkitdirs_unittest/checkForArgumentAndRemoveFromArrayRefGettingValue.pl:
+        * Scripts/webkitpy/common/config/ports.py:
+        (GtkWK2Port.build_webkit_command):
+        (EflWK2Port.build_webkit_command):
+        * Scripts/webkitpy/common/config/ports_unittest.py:
+        (DeprecatedPortTest.test_gtk_wk2_port):
+        * Scripts/webkitpy/port/efl.py:
+        (EflPort.build_webkit_command):
+        * Scripts/webkitpy/port/gtk.py:
+        (GtkPort._built_libraries_path):
+        (GtkPort._search_paths):
+        (GtkPort.test_expectations_file_position):
+        (GtkPort.build_webkit_command):
+        (GtkPort.run_webkit_tests_command):
+        (GtkPort.warn_if_bug_missing_in_test_expectations): Deleted.
+
+2014-09-16  Daniel Bates  <dabates@apple.com>
+
+        [iOS] Add iOS SDK name and version suffix to WebKitSystemInterface debug/release product name
+        https://bugs.webkit.org/show_bug.cgi?id=136862
+
+        Reviewed by David Kilzer.
+
+        * DumpRenderTree/mac/Configurations/DebugRelease.xcconfig:
+        * WebKitTestRunner/Configurations/DebugRelease.xcconfig:
+        * WebKitTestRunner/WebKitTestRunner.xcodeproj/project.pbxproj: Remove hardcoded iOS 8.0
+        IPHONEOS_DEPLOYMENT_TARGET to ensure we link against the latest version of WebKitSystemInterface.
+
+2014-09-12  Ryosuke Niwa  <rniwa@webkit.org>
+
+        Mac queue slaves should reboot every so often
+        https://bugs.webkit.org/show_bug.cgi?id=136791
+
+        Reviewed by Alexey Proskuryakov.
+
+        Reboot Mac queue slaves every night between 1 A.M. and 6 A.M.
+
+        * EWSTools/start-queue-mac.sh:
+
+2014-09-16  Csaba Osztrogonác  <ossy@webkit.org>
+
+        Unreviewed gardening, skip one more tests on Windows.
+
+        * Scripts/run-javascriptcore-tests:
+
+2014-09-16  Csaba Osztrogonác  <ossy@webkit.org>
+
+        JSC test gardening
+        https://bugs.webkit.org/show_bug.cgi?id=136823
+
+        Reviewed by Geoffrey Garen.
+
+        * Scripts/run-javascriptcore-tests: Skip tests on only the affected platforms.
+
+2014-09-16  Eva Balazsfalvi  <evab.u-szeged@partner.samsung.com>
+
+        Remove shouldAbortEarly cruft from master.cfg
+        https://bugs.webkit.org/show_bug.cgi?id=136779
+
+        Reviewed by Csaba Osztrogonác.
+
+        * BuildSlaveSupport/build.webkit.org-config/master.cfg:
+        (ConfigureBuild.start):
+        (RunWebKitTests.start):
+        (RunWebKit2Tests.start): Deleted.
+
+2014-09-15  Tibor Meszaros  <tmeszaros.u-szeged@partner.samsung.com>
+
+        Remove ORWT related crufts from webkitdirs.pm
+        https://bugs.webkit.org/show_bug.cgi?id=136821
+
+        Reviewed by Alexey Proskuryakov.
+
+        * Scripts/webkitdirs.pm:
+        (isPerianInstalled): Deleted.
+        (determineIPhoneSimulatorVersion): Deleted.
+        (iPhoneSimulatorVersion): Deleted.
+        (isSnowLeopard): Deleted.
+        (isLion): Deleted.
+        (quitIOSSimulator): Deleted.
+
+2014-09-15  Roger Fong  <roger_fong@apple.com>
+
+        Unreviewed. Skip yet another ecma/Date test that fails only on Windows.
+        https://bugs.webkit.org/show_bug.cgi?id=25160
+
+        * Scripts/run-javascriptcore-tests:
+
+2014-09-15  Lucas Forschler  <lforschler@apple.com>
+
+        Add another Apple build slave to the Mountain Lion Debug WK1 queue
+        
+        Rubber stamped by Matt Hanson.
+        
+        * BuildSlaveSupport/build.webkit.org-config/config.json:
+
+2014-09-15  Grzegorz Czajkowski  <g.czajkowski@samsung.com>
+
+        [EFL] Ecore and Eina are initialized twice in TestWebKitAPI
+        https://bugs.webkit.org/show_bug.cgi?id=136822
+
+        Reviewed by Gyuyoung Kim.
+
+        In TestWebKitAPI/efl/main.cpp, ecore and eina modules are unnecessarily
+        initialized as we already does it in PlatformWebView::PlatformWebView
+        calling ewk_init(). The reason for that was to ensure testing for example,
+        WTF where creating the view is not mandatory.
+
+        Call ewk_init() and ewk_shutdown() in TestWebKitAPI/efl/main.cpp
+        in order to properly initalize and release EWebKit.
+
+        * TestWebKitAPI/PlatformEfl.cmake:
+        * TestWebKitAPI/efl/PlatformWebView.cpp:
+        (TestWebKitAPI::PlatformWebView::PlatformWebView):
+        (TestWebKitAPI::PlatformWebView::~PlatformWebView):
+        * TestWebKitAPI/efl/main.cpp:
+        (main):
+
+2014-09-15  peavo@outlook.com  <peavo@outlook.com>
+
+        [WinCairo] Make it easier to enable/disable GStreamer.
+        https://bugs.webkit.org/show_bug.cgi?id=135766
+
+        Reviewed by Brent Fulgham.
+
+        Make it possible to enable/disable GStreamer by editing the new user macro ENABLE_GSTREAMER_WINCAIRO.
+
+        * WinLauncher/WinMain.cpp: Compile fix when GStreamer is enabled.
+
+2014-09-12  Brian J. Burg  <burg@cs.washington.edu>
+
+        Web Inspector: remind about rebaselining generator test results
+        https://bugs.webkit.org/show_bug.cgi?id=136759
+
+        Reviewed by Joseph Pecoraro.
+
+        For now, we can implement this as a watchlist message. Add watchlist
+        groups and messages for the inspector and web replay generators.
+
+        * Scripts/webkitpy/common/config/watchlist:
+
+2014-09-12  Alexey Proskuryakov  <ap@apple.com>
+
+        build.webkit.org/dashboard: Overlapping text when status is long
+        https://bugs.webkit.org/show_bug.cgi?id=136794
+
+        Reviewed by Timothy Hatcher.
+
+        * BuildSlaveSupport/build.webkit.org-config/public_html/dashboard/Styles/StatusLineView.css:
+        (.status-line): Replaces height with min-height.
+
+2014-09-12  Timothy Hatcher  <timothy@apple.com>
+
+        Make Brian Burg a WebKit reviewer.
+
+        * Scripts/webkitpy/common/config/contributors.json: Move Brian Burg's entry.
+
+2014-09-12  Alexey Proskuryakov  <ap@apple.com>
+
+        Multiple EWS or commit bots can pick up processing of the same patch
+        https://bugs.webkit.org/show_bug.cgi?id=136793
+
+        Reviewed by Ryosuke Niwa.
+
+        Change timeout from one hour to two hours. This will let bots finish, and in the
+        unlikely event of a bot being frozen, will only delay patch processing restart by
+        one hour.
+
+        * QueueStatusServer/app.yaml:
+        * QueueStatusServer/model/activeworkitems.py: (ActiveWorkItems.deactivate_expired):
+
+2014-09-11  Andy Estes  <aestes@apple.com>
+
+        [WebKit2] WKImageCreateCGImage crashes when passed a null WKImage
+        https://bugs.webkit.org/show_bug.cgi?id=136768
+
+        Reviewed by Tim Horton.
+
+        * TestWebKitAPI/TestWebKitAPI.xcodeproj/project.pbxproj:
+        * TestWebKitAPI/Tests/WebKit2/WKImageCreateCGImageCrash.cpp: Added.
+        (TestWebKitAPI::TEST):
+
+2014-09-12  Carlos Garcia Campos  <cgarcia@igalia.com>
+
+        REGRESSION(r173423): CertificateInfo is never sent to the UI process when using shared secondary process model
+        https://bugs.webkit.org/show_bug.cgi?id=136669
+
+        Reviewed by Antti Koivisto.
+
+        * Scripts/run-gtk-tests:
+        (TestRunner): Unskip SSL test.
+
+2014-09-12  Eric Carlson  <eric.carlson@apple.com>
+
+        Strip extraneous AVFoundation and CoreMedia logging
+        https://bugs.webkit.org/show_bug.cgi?id=136747
+
+        Reviewed by Jer Noble.
+
+        * Scripts/webkitpy/layout_tests/controllers/single_test_runner.py:
+        (SingleTestRunner._run_compare_test): Allow the port to specify patterns to strip from stderr.
+
+        * Scripts/webkitpy/port/base.py:
+        (Port.stderr_patterns_to_strip): Base class, empty list
+
+        * Scripts/webkitpy/port/driver.py:
+        (DriverOutput.strip_stderror_patterns): Strip the specified patterns from stderr.
+
+        * Scripts/webkitpy/port/ios.py:
+        (IOSSimulatorPort.stderr_patterns_to_strip): iOS patterns - there are none.
+
+        * Scripts/webkitpy/port/mac.py:
+        (MacPort.stderr_patterns_to_strip): CoreMedia and AVFoundation logging we can ignore.
+
+
+2014-09-11  Michael Saboff  <msaboff@apple.com>
+
+        lldb_webkit.py:btjs doesn't work with release builds
+        https://bugs.webkit.org/show_bug.cgi?id=136760
+
+        Reviewed by Jer Noble.
+
+        If we can't get a result calling JSC::ExecState::describeFrame(), try calling the
+        mangled name _ZN3JSC9ExecState13describeFrameEv.  Also cleaned up the handling if
+        we can't get a valid result from trying either call.  In that case, we fallback to
+        just showing the PC.  Also added check for both entry points.  If neither is found,
+        we issue a warning and output the stack trace without JavaScript annotations.
+
+        * lldb/lldb_webkit.py:
+        (btjs):
+
+2014-09-11  Rebecca Hauck  <rhauck@adobe.com>
+
+        webkitpy test failures from import-w3c-tests
+        https://bugs.webkit.org/show_bug.cgi?id=136752
+
+        Reviewed by Bem Jones-Bey.
+
+        This patch fixes a bug in import-w3c-tests where we were appending
+        the wrong set of files to the copy_list. This also updates the tests
+        to clear the failures introduced in the patch for bug 135929.
+
+        * Scripts/webkitpy/w3c/test_converter_unittest.py:
+        (W3CTestConverterTest.test_read_prefixed_property_list):
+        * Scripts/webkitpy/w3c/test_parser.py:
+        (TestParser.analyze_test):
+        (TestParser.support_files):
+        * Scripts/webkitpy/w3c/test_parser_unittest.py:
+
+2014-09-10  Brent Fulgham  <bfulgham@apple.com>
+
+        Blink merge: Speculative fix for windows run-webkit-tests hangs
+        https://bugs.webkit.org/show_bug.cgi?id=136727
+
+        Reviewed by Csaba Osztrogonác.
+
+        Merged from Blink (patch by Dirk Pranke):
+        <https://chromium.googlesource.com/chromium/blink/+/0cdd98d44a20c3951562ccf8b08b1fefba8dac67%5E%21/#F0>
+
+        * Scripts/webkitpy/common/system/executive.py:
+        (Executive.kill_process):
+
+2014-09-11  Eva Balazsfalvi  <evab.u-szeged@partner.samsung.com>
+
+        Added myself as a committer.
+
+        Unreviewed.
+
+        * Scripts/webkitpy/common/config/contributors.json:
+
+2014-09-11  László Langó  <llango.u-szeged@partner.samsung.com>
+
+        [JavaScriptCore] Fix FTL on platform EFL.
+        https://bugs.webkit.org/show_bug.cgi?id=133571
+
+        Reviewed by Filip Pizlo.
+
+        * efl/install-dependencies: Revert r169181.
+        * efl/jhbuild.modules: Clone and build a custom branch.
+        This branch contains some fix for FTL of platform EFL.
+        The branch is a fork of llvm r206311.
+
+2014-09-10  Tanay C  <tanay.c@samsung.com>
+
+        [EFL][WK2] Minibrowser : Shift+Scroll navigate to back or forward url's
+        https://bugs.webkit.org/show_bug.cgi?id=136698
+
+        Reviewed by Gyuyoung Kim.
+
+        * MiniBrowser/efl/main.c: Add functionality to support shift + mouse scroll navigation
+        (on_mouse_wheel): Added.
+        (window_free):
+        (window_create):
+
+2014-09-10  Rohit Kumar  <kumar.rohit@samsung.com>
+
+        [EFL][WK2] Minibrowser : Add tooltip for toolbar buttons in Minibrowser
+        https://bugs.webkit.org/show_bug.cgi?id=136284
+
+        Reviewed by Gyuyoung Kim.
+
+        * MiniBrowser/efl/main.c:
+        (window_create):
+
+2014-09-10  Rebecca Hauck  <rhauck@adobe.com>
+
+        import-w3c-tests doesn't handle relative paths to support files in ref files correctly
+        https://bugs.webkit.org/show_bug.cgi?id=135929
+
+        Reviewed by Bem Jones-Bey.
+
+        The recent refactor of the W3C test repo falsified a bunch of assmumptions that
+        were made when this script was originally written with respect to relative paths
+        in ref files. This patch updates import-w3c-tests to update paths in ref files if
+        they move relative to the test file.
+
+
+        * Scripts/webkitpy/w3c/test_converter.py:
+        (convert_for_webkit):
+        (_W3CTestConverter.__init__):
+        (_W3CTestConverter.convert_reference_relpaths):
+        (_W3CTestConverter.convert_style_data):
+        (_W3CTestConverter.convert_attributes_if_needed):
+        * Scripts/webkitpy/w3c/test_importer.py:
+        (TestImporter.find_importable_tests):
+        (TestImporter.import_tests):
+        * Scripts/webkitpy/w3c/test_parser.py:
+        (TestParser.load_file):
+        (TestParser.analyze_test):
+        (TestParser.support_files):
+
+2014-09-10  Michael Catanzaro  <mcatanzaro@igalia.com>
+
+        [GTK] allow overwriting destination of download
+        https://bugs.webkit.org/show_bug.cgi?id=136372
+
+        Reviewed by Carlos Garcia Campos.
+
+        * TestWebKitAPI/Tests/WebKit2Gtk/TestDownloads.cpp:
+        (downloadLocalFileSuccessfully): Split from testDownloadLocalFile
+        (testDownloadLocalFile): Split off downloadLocalFileSuccessfully
+        (createFileAtDestination): Added
+        (testDownloadOverwriteDestinationAllowed): Added
+        (testDownloadOverwriteDestinationDisallowed): Added
+        (testDownloadLocalFileError): Use new DownloadErrorTest::ExpectedError
+        (testDownloadRemoteFileError): Use new DownloadErrorTest::ExpectedError
+        (beforeAll): New tests
+
+2014-08-05  David Farler  <dfarler@apple.com>
+
+        iOS Simulator: run-webkit-tests chokes on unterminated UTF-8 when writing a test result
+        https://bugs.webkit.org/show_bug.cgi?id=135551
+
+        Reviewed by Daniel Bates.
+
+        Prevent printing invalid Unicode strings going to stderr.
+        Also, make filesystem.py more tolerant about receiving
+        Unicode (encoded as UTF-8) when writing to files, in the
+        rare case that an NSError description will make it to
+        stderr, such as -[LTRelayController createUniqueApp].
+
+        * LayoutTestRelay/LayoutTestRelay/LTRelayController.m:
+        (-[LTRelayController launchSimulator]): Removed.
+        (-[LTRelayController createUniqueApp]):
+        Don't explicitly try to uninstall the app. It is automatically handled
+        when installing an app with the same bundle identifier.
+        (-[LTRelayController start]):
+        (-[LTRelayController bootDevice]): Removed.
+        The device already boots as a part of starting the simulator. Attempting
+        to boot a second time may cause spurious stderr output.
+        * Scripts/webkitpy/port/driver.py:
+        (IOSSimulatorDriver._setup_environ_for_driver):
+        Explicitly set DEVELOPER_DIR once so xcode-select isn't called.
+        Open the iOS Simulator once instead of the LayoutTestRelay trying
+        to do it.
+        * Scripts/webkitpy/port/ios.py:
+        (IOSSimulatorPort._get_crash_log):
+        Make sure stderr is at least an empty string.
+        (IOSSimulatorPort):
+        (IOSSimulatorPort.developer_dir):
+        New property for setting up DEVELOPER_DIR in the driver environment.
+
+2014-09-09  Dan Bernstein  <mitz@apple.com>
+
+        Clean up the MiniBrowser Xcode project
+        https://bugs.webkit.org/show_bug.cgi?id=136684
+
+        Reviewed by Tim Horton.
+
+        * MiniBrowser/Configurations/Base.xcconfig: Enabled warnings recommended by Xcode 6.
+        * MiniBrowser/MiniBrowser.xcodeproj/project.pbxproj: Removed explicit linking against
+        WebKit2.framework. Upgraded project file version.
+
+2014-09-09  Daniel Bates  <dbates@webkit.org>
+
+        svn-{apply, unapply} fails to apply/unapply SVN 1.7 patch that adds new file with property change
+        https://bugs.webkit.org/show_bug.cgi?id=136379
+
+        Reviewed by David Kilzer.
+
+        Fixes an issue where svn-{apply, unapply} fail to apply or unapply, respectively,
+        a patch generated using Subversion 1.7.4 (r1295709) that both adds a new file F
+        and sets a property on F (say, the executable bit).
+
+        * Scripts/svn-apply:
+        (patch): Only add file if the diff has text chunks.
+        * Scripts/svn-unapply:
+        (patch): Only delete added file if the diff has text chunks.
+
+2014-09-09  Carlos Alberto Lopez Perez  <clopez@igalia.com>
+
+        [GTK] Unreviewed GTK gardening.
+
+        * Scripts/run-gtk-tests:
+        (TestRunner): Skip TestSSL:webkit2/WebKitWebView/ssl (fails since r173423).
+
+2014-09-09  Christophe Dumez  <cdumez@apple.com>
+
+        Update my email in contributors.json
+        https://bugs.webkit.org/show_bug.cgi?id=136671
+
+        Reviewed by Andreas Kling.
+
+        * Scripts/webkitpy/common/config/contributors.json:
+
+2014-09-08  Gyuyoung Kim  <gyuyoung.kim@samsung.com>
+
+        [EFL] Enable fixed layout by default
+        https://bugs.webkit.org/show_bug.cgi?id=136607
+
+        Reviewed by Csaba Osztrogonác.
+
+        Fixed layout is being used by Tizen platform by default. However, the feature
+        has still many defects now. So, we need to enable it by default, then should fix
+        those bugs. 
+
+        * MiniBrowser/efl/main.c:
+
+2014-09-08  Eva Balazsfalvi  <evab.u-szeged@partner.samsung.com>
+
+        Remove FILTERS flag
+        https://bugs.webkit.org/show_bug.cgi?id=136571
+
+        Reviewed by Darin Adler.
+
+        * Scripts/webkitperl/FeatureList.pm:
+
+2014-09-08  Alexey Proskuryakov  <ap@apple.com>
+
+        Dashboard metrics should ignore commits that didn't trigger builds
+        https://bugs.webkit.org/show_bug.cgi?id=136618
+
+        Reviewed by Darin Adler.
+
+        Commits that didn't trigger builds are ones like ChangeLog updates, patches for
+        other platforms etc. It does not make sense to count wait time for these, as it
+        can be arbitrarily long.
+
+        The new algorithm is much slower asymptotically, but it's OK, computers are fast.
+
+        * BuildSlaveSupport/build.webkit.org-config/public_html/dashboard/Scripts/BuildbotIteration.js:
+        (BuildbotIteration.prototype._parseData): Record changes that triggered the iteration.
+
+        * BuildSlaveSupport/build.webkit.org-config/public_html/dashboard/Scripts/MetricsAnalyzer.js:
+        We used to walk the timeline to see which revisions are fully tested, but that's not
+        correct. A revision that's only tested by a subset of queues finishes independently
+        of another that's tested by another subset. Now, we just search for the answer for
+        each revision individually.
+
+        * BuildSlaveSupport/build.webkit.org-config/public_html/dashboard/Scripts/MetricsView.js:
+        (MetricsView.prototype._update.appendQueueResults): Added worst revision number, which
+        the analyzer now reports. Removed best time, which is more confusing than meaningful.
+
+2014-09-08  Tibor Meszaros  <tmeszaros.u-szeged@partner.samsung.com>
+
+        Remove EWebLauncher from webkitdirs.pm
+        https://bugs.webkit.org/show_bug.cgi?id=136622
+
+        Reviewed by Gyuyoung Kim.
+
+        * Scripts/webkitdirs.pm:
+        (launcherName):
+
+2014-09-06  Sam Weinig  <sam@webkit.org>
+
+        XPCPtr should be converted into an all purpose smart pointer for os_objects
+        https://bugs.webkit.org/show_bug.cgi?id=136602
+
+        Reviewed by Darin Adler.
+
+        * TestWebKitAPI/TestWebKitAPI.xcodeproj/project.pbxproj:
+        * TestWebKitAPI/Tests/WTF/darwin: Added.
+        * TestWebKitAPI/Tests/WTF/darwin/OSObjectPtr.cpp: Added.
+        Add basic unit tests for OSObjectPtr.
+
+2014-09-06  Saam Barati  <saambarati1@gmail.com>
+
+        Unreviewed. Add myself as a committer.
+
+        * Scripts/webkitpy/common/config/contributors.json:
+
+2014-09-06  Gyuyoung Kim  <gyuyoung.kim@samsung.com>
+
+        Unreviewed, EFL build fix when SHARED_CORE is on.
+
+        * TestWebKitAPI/PlatformEfl.cmake:
+
 2014-09-05  Lucas Forschler  <lforschler@apple.com>
 
         <https://webkit.org/b/136586> Add bots to Apple build/test queues

@@ -492,9 +492,6 @@ static void webKitWebSrcStart(WebKitWebSrc* src)
     // We always request Icecast/Shoutcast metadata, just in case ...
     request.setHTTPHeaderField(HTTPHeaderName::IcyMetadata, "1");
 
-    // Needed to use DLNA streaming servers
-    request.setHTTPHeaderField(HTTPHeaderName::TransferModeDLNA, "Streaming");
-
     if (priv->player) {
         if (CachedResourceLoader* loader = priv->player->cachedResourceLoader())
             priv->client = new CachedResourceStreamingClient(src, loader, request, priv->player->mediaPlayerClient()->mediaPlayerCORSMode());
@@ -999,8 +996,8 @@ CachedResourceStreamingClient::CachedResourceStreamingClient(WebKitWebSrc* src, 
 {
     DataBufferingPolicy bufferingPolicy = request.url().protocolIs("blob") ? BufferData : DoNotBufferData;
     RequestOriginPolicy corsPolicy = corsMode != MediaPlayerClient::Unspecified ? PotentiallyCrossOriginEnabled : UseDefaultOriginRestrictionsForType;
-    StoredCredentials allowCredentials = corsMode == MediaPlayerClient::UseCredentials ? AllowStoredCredentials : DoNotAllowStoredCredentials;
-    ResourceLoaderOptions options(SendCallbacks, DoNotSniffContent, bufferingPolicy, allowCredentials, DoNotAskClientForCrossOriginCredentials, DoSecurityCheck, corsPolicy);
+    StoredCredentials allowCredentials = corsMode == MediaPlayerClient::Anonymous ? DoNotAllowStoredCredentials : AllowStoredCredentials;
+    ResourceLoaderOptions options(SendCallbacks, DoNotSniffContent, bufferingPolicy, allowCredentials, DoNotAskClientForCrossOriginCredentials, DoSecurityCheck, corsPolicy, DoNotIncludeCertificateInfo);
 
     CachedResourceRequest cacheRequest(request, options);
 

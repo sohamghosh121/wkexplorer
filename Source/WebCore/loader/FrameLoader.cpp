@@ -1154,29 +1154,10 @@ void FrameLoader::completed()
 
 void FrameLoader::started()
 {
-    if (m_frame.page() && m_frame.page()->pageThrottler())
-        m_activityAssertion = m_frame.page()->pageThrottler()->pageLoadActivityToken();
+    if (m_frame.page())
+        m_activityAssertion = m_frame.page()->pageThrottler().pageLoadActivityToken();
     for (Frame* frame = &m_frame; frame; frame = frame->tree().parent())
         frame->loader().m_isComplete = false;
-}
-
-void FrameLoader::prepareForHistoryNavigation()
-{
-    // If there is no currentItem, but we still want to engage in 
-    // history navigation we need to manufacture one, and update
-    // the state machine of this frame to impersonate having
-    // loaded it.
-    RefPtr<HistoryItem> currentItem = history().currentItem();
-    if (!currentItem) {
-        currentItem = HistoryItem::create();
-        currentItem->setLastVisitWasFailure(true);
-        history().setCurrentItem(currentItem.get());
-        m_frame.page()->backForward().setCurrentItem(currentItem.get());
-
-        ASSERT(stateMachine().isDisplayingInitialEmptyDocument());
-        stateMachine().advanceTo(FrameLoaderStateMachine::DisplayingInitialEmptyDocumentPostCommit);
-        stateMachine().advanceTo(FrameLoaderStateMachine::CommittedFirstRealLoad);
-    }
 }
 
 void FrameLoader::prepareForLoadStart()

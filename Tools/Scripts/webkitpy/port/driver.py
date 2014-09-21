@@ -107,6 +107,12 @@ class DriverOutput(object):
         for pattern in patterns:
             self.text = re.sub(pattern[0], pattern[1], self.text)
 
+    def strip_stderror_patterns(self, patterns):
+        if not self.error:
+            return
+        for pattern in patterns:
+            self.error = re.sub(pattern[0], pattern[1], self.error)
+
 class Driver(object):
     """object for running test(s) using DumpRenderTree/WebKitTestRunner."""
 
@@ -512,6 +518,10 @@ class IOSSimulatorDriver(Driver):
             '-app', dump_tool,
         ]
         return [relay_tool] + relay_args + ['--'] + dump_tool_args
+
+    def _setup_environ_for_driver(self, environment):
+        environment['DEVELOPER_DIR'] = self._port.developer_dir
+        return super(IOSSimulatorDriver, self)._setup_environ_for_driver(environment)
 
 
 class ContentBlock(object):

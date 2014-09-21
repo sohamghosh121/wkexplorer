@@ -34,6 +34,7 @@
 #import <WebCore/MainFrame.h>
 #import <WebCore/FrameView.h>
 #import <WebCore/Page.h>
+#import <WebCore/WAKAppKitStubs.h>
 
 /* 
  The implementation of this class will be augmented by an accesibility bundle that is loaded only when accessibility is requested to be enabled.
@@ -69,12 +70,12 @@
     return m_page->pageScaleFactor();
 }
 
-- (id)accessibilityHitTest:(WebCore::IntPoint)point
+- (id)accessibilityHitTest:(NSPoint)point
 {
     if (!m_page)
         return nil;
     
-    WebCore::IntPoint convertedPoint = m_page->accessibilityScreenToRootView(point);
+    WebCore::IntPoint convertedPoint = m_page->accessibilityScreenToRootView(WebCore::IntPoint(point));
     return [[self accessibilityRootObjectWrapper] accessibilityHitTest:convertedPoint];
 }
 

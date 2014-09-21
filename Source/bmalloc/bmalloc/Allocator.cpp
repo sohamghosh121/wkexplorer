@@ -37,77 +37,69 @@ namespace bmalloc {
 
 Allocator::Allocator(Deallocator& deallocator)
     : m_deallocator(deallocator)
-    , m_smallAllocators()
-    , m_mediumAllocator()
-    , m_smallAllocatorLog()
-    , m_mediumAllocatorLog()
 {
-    unsigned short size = alignment;
-    for (auto& allocator : m_smallAllocators) {
-        allocator = SmallAllocator(size);
-        size += alignment;
-    }
+    for (unsigned short i = alignment; i <= smallMax; i += alignment)
+        m_smallAllocators[smallSizeClassFor(i)].init<SmallLine>(i);
+
+    for (unsigned short i = smallMax + alignment; i <= mediumMax; i += alignment)
+        m_mediumAllocators[mediumSizeClassFor(i)].init<MediumLine>(i);
 }
 
 Allocator::~Allocator()
 {
     scavenge();
 }
-    
+
 void Allocator::scavenge()
 {
-    for (auto& allocator : m_smallAllocators)
-        log(allocator);
-    processSmallAllocatorLog();
+    for (auto& allocator : m_smallAllocators) {
+        while (allocator.canAllocate())
+            m_deallocator.deallocate(allocator.allocate());
+        allocator.clear();
+    }
 
-    log(m_mediumAllocator);
-    processMediumAllocatorLog();
-}
+    for (auto& allocator : m_mediumAllocators) {
+        while (allocator.canAllocate())
+            m_deallocator.deallocate(allocator.allocate());
+        allocator.clear();
+    }
 
-void Allocator::log(SmallAllocator& allocator)
-{
-    if (m_smallAllocatorLog.size() == m_smallAllocatorLog.capacity())
-        processSmallAllocatorLog();
+    std::lock_guard<StaticMutex> lock(PerProcess<Heap>::mutex());
+    Heap* heap = PerProcess<Heap>::getFastCase();
     
-    if (allocator.isNull())
-        return;
-
-    m_smallAllocatorLog.push(std::make_pair(allocator.line(), allocator.derefCount()));
-}
-
-void Allocator::processSmallAllocatorLog()
-{
-    std::lock_guard<StaticMutex> lock(PerProcess<Heap>::mutex());
-
-    for (auto& logEntry : m_smallAllocatorLog) {
-        if (!logEntry.first->deref(lock, logEntry.second))
-            continue;
-        m_deallocator.deallocateSmallLine(lock, logEntry.first);
+    for (auto& smallLineCache : m_smallLineCaches) {
+        while (smallLineCache.size())
+            heap->deallocateSmallLine(lock, smallLineCache.pop());
     }
-    m_smallAllocatorLog.clear();
+    while (m_mediumLineCache.size())
+        heap->deallocateMediumLine(lock, m_mediumLineCache.pop());
 }
 
-void Allocator::log(MediumAllocator& allocator)
+SmallLine* Allocator::allocateSmallLine(size_t smallSizeClass)
 {
-    if (m_mediumAllocatorLog.size() == m_mediumAllocatorLog.capacity())
-        processMediumAllocatorLog();
+    SmallLineCache& smallLineCache = m_smallLineCaches[smallSizeClass];
+    if (!smallLineCache.size()) {
+        std::lock_guard<StaticMutex> lock(PerProcess<Heap>::mutex());
+        Heap* heap = PerProcess<Heap>::getFastCase();
 
-    if (allocator.isNull())
-        return;
-
-    m_mediumAllocatorLog.push(std::make_pair(allocator.line(), allocator.derefCount()));
-}
-
-void Allocator::processMediumAllocatorLog()
-{
-    std::lock_guard<StaticMutex> lock(PerProcess<Heap>::mutex());
-
-    for (auto& logEntry : m_mediumAllocatorLog) {
-        if (!logEntry.first->deref(lock, logEntry.second))
-            continue;
-        m_deallocator.deallocateMediumLine(lock, logEntry.first);
+        while (smallLineCache.size() != smallLineCache.capacity())
+            smallLineCache.push(heap->allocateSmallLine(lock, smallSizeClass));
     }
-    m_mediumAllocatorLog.clear();
+
+    return smallLineCache.pop();
+}
+
+MediumLine* Allocator::allocateMediumLine()
+{
+    if (!m_mediumLineCache.size()) {
+        std::lock_guard<StaticMutex> lock(PerProcess<Heap>::mutex());
+        Heap* heap = PerProcess<Heap>::getFastCase();
+
+        while (m_mediumLineCache.size() != m_mediumLineCache.capacity())
+            m_mediumLineCache.push(heap->allocateMediumLine(lock));
+    }
+
+    return m_mediumLineCache.pop();
 }
 
 void* Allocator::allocateLarge(size_t size)
@@ -126,16 +118,11 @@ void* Allocator::allocateXLarge(size_t size)
 
 void* Allocator::allocateMedium(size_t size)
 {
-    MediumAllocator& allocator = m_mediumAllocator;
-    size = roundUpToMultipleOf<alignment>(size);
+    BumpAllocator& allocator = m_mediumAllocators[mediumSizeClassFor(size)];
 
-    void* object;
-    if (allocator.allocate(size, object))
-        return object;
-
-    log(allocator);
-    allocator.refill(m_deallocator.allocateMediumLine());
-    return allocator.allocate(size);
+    if (!allocator.canAllocate())
+        allocator.refill(allocateMediumLine());
+    return allocator.allocate();
 }
 
 void* Allocator::allocateSlowCase(size_t size)
@@ -146,9 +133,8 @@ IF_DEBUG(
 )
     if (size <= smallMax) {
         size_t smallSizeClass = smallSizeClassFor(size);
-        SmallAllocator& allocator = m_smallAllocators[smallSizeClass];
-        log(allocator);
-        allocator.refill(m_deallocator.allocateSmallLine(smallSizeClass));
+        BumpAllocator& allocator = m_smallAllocators[smallSizeClass];
+        allocator.refill(allocateSmallLine(smallSizeClass));
         return allocator.allocate();
     }
 

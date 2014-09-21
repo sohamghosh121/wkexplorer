@@ -1,3 +1,1316 @@
+2014-09-20  Filip Pizlo  <fpizlo@apple.com>
+
+        FTL OSRExit construction should be based on methods that return ExitValues rather than methods that add ExitValues to OSRExit
+        https://bugs.webkit.org/show_bug.cgi?id=136978
+
+        Reviewed by Dean Jackson.
+
+        * ftl/FTLLowerDFGToLLVM.cpp:
+        (JSC::FTL::LowerDFGToLLVM::buildExitArguments):
+        (JSC::FTL::LowerDFGToLLVM::exitValueForNode):
+        (JSC::FTL::LowerDFGToLLVM::exitArgument):
+        (JSC::FTL::LowerDFGToLLVM::addExitArgumentForNode): Deleted.
+        (JSC::FTL::LowerDFGToLLVM::tryToSetConstantExitArgument): Deleted.
+        (JSC::FTL::LowerDFGToLLVM::addExitArgument): Deleted.
+
+2014-09-20  Filip Pizlo  <fpizlo@apple.com>
+
+        FTL OSR exit should do reboxing and value recovery in the same pass
+        https://bugs.webkit.org/show_bug.cgi?id=136977
+
+        Reviewed by Oliver Hunt.
+        
+        It's conceptually simpler to have all of the logic in one place. After the
+        recover-and-rebox loop is done, all of the exit values are in the form that the baseline
+        JIT would want them to be in; the only remaining task is to move them into the right
+        place on the stack after we do all of the necessary stack adjustments.
+
+        * ftl/FTLOSRExitCompiler.cpp:
+        (JSC::FTL::compileStub):
+
+2014-09-19  Filip Pizlo  <fpizlo@apple.com>
+
+        StorageAccessData should be referenced in a sensible way
+        https://bugs.webkit.org/show_bug.cgi?id=136963
+
+        Reviewed and rubber stamped by Michael Saboff.
+
+        * dfg/DFGAbstractInterpreterInlines.h:
+        (JSC::DFG::AbstractInterpreter<AbstractStateType>::executeEffects):
+        * dfg/DFGByteCodeParser.cpp:
+        (JSC::DFG::ByteCodeParser::handleGetByOffset):
+        (JSC::DFG::ByteCodeParser::handlePutByOffset):
+        (JSC::DFG::ByteCodeParser::handlePutById):
+        * dfg/DFGClobberize.h:
+        (JSC::DFG::clobberize):
+        * dfg/DFGConstantFoldingPhase.cpp:
+        (JSC::DFG::ConstantFoldingPhase::emitGetByOffset):
+        (JSC::DFG::ConstantFoldingPhase::emitPutByOffset):
+        * dfg/DFGGraph.cpp:
+        (JSC::DFG::Graph::dump):
+        * dfg/DFGGraph.h:
+        * dfg/DFGNode.h:
+        (JSC::DFG::Node::convertToGetByOffset):
+        (JSC::DFG::Node::convertToPutByOffset):
+        (JSC::DFG::Node::storageAccessData):
+        (JSC::DFG::Node::storageAccessDataIndex): Deleted.
+        * dfg/DFGSafeToExecute.h:
+        (JSC::DFG::safeToExecute):
+        * dfg/DFGSpeculativeJIT32_64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+        * dfg/DFGSpeculativeJIT64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+        * ftl/FTLLowerDFGToLLVM.cpp:
+        (JSC::FTL::LowerDFGToLLVM::compileGetByOffset):
+        (JSC::FTL::LowerDFGToLLVM::compilePutByOffset):
+
+2014-09-19  Ryosuke Niwa  <rniwa@webkit.org>
+
+        Leak of mallocs under StructureSet::OutOfLineList::create
+        https://bugs.webkit.org/show_bug.cgi?id=136970
+
+        Reviewed by Filip Pizlo.
+
+        addOutOfLine should free the old list when expanding the capacity.
+
+        * bytecode/StructureSet.cpp:
+        (JSC::StructureSet::addOutOfLine):
+
+2014-09-19  Daniel Bates  <dabates@apple.com>
+
+        Always assume internal SDK when building configuration Production
+        https://bugs.webkit.org/show_bug.cgi?id=136925
+        <rdar://problem/18362399>
+
+        Reviewed by Dan Bernstein.
+
+        As a side effect of this change we will always enable ENABLE_TOUCH_EVENTS, ENABLE_IOS_{GESTURE, TOUCH}_EVENTS,
+        and ENABLE_XSLT when either building configuration Production or building with the Internal SDK.
+
+        * Configurations/Base.xcconfig:
+
+2014-09-19  Diego Pino Garcia  <dpino@igalia.com>
+
+        Simple ES6 feature:String prototype additions
+        https://bugs.webkit.org/show_bug.cgi?id=131704
+
+        Reviewed by Darin Adler.
+
+        * runtime/StringPrototype.cpp:
+        (JSC::StringPrototype::finishCreation):
+        (JSC::stringProtoFuncStartsWith): Added.
+        (JSC::stringProtoFuncEndsWith): Added.
+        (JSC::stringProtoFuncContains): Added.
+
+2014-09-18  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Unreviewed rollout r173731. Broke multiple builds.
+
+        * inspector/JSGlobalObjectInspectorController.cpp:
+        (Inspector::JSGlobalObjectInspectorController::JSGlobalObjectInspectorController):
+        (Inspector::JSGlobalObjectInspectorController::connectFrontend):
+        * inspector/JSGlobalObjectInspectorController.h:
+        * inspector/remote/RemoteInspector.h:
+        * inspector/remote/RemoteInspector.mm:
+        (Inspector::RemoteInspector::RemoteInspector):
+        (Inspector::RemoteInspector::setupFailed):
+        (Inspector::RemoteInspector::start):
+        (Inspector::RemoteInspector::stopInternal):
+        (Inspector::RemoteInspector::setupXPCConnectionIfNeeded):
+        (Inspector::RemoteInspector::xpcConnectionReceivedMessage):
+        (Inspector::RemoteInspector::xpcConnectionFailed):
+        (Inspector::RemoteInspector::receivedSetupMessage):
+        (Inspector::globalAutomaticInspectionState): Deleted.
+        (Inspector::RemoteInspector::updateDebuggableAutomaticInspectCandidate): Deleted.
+        (Inspector::RemoteInspector::sendAutomaticInspectionCandidateMessage): Deleted.
+        (Inspector::RemoteInspector::setupSucceeded): Deleted.
+        (Inspector::RemoteInspector::waitingForAutomaticInspection): Deleted.
+        (Inspector::RemoteInspector::receivedAutomaticInspectionConfigurationMessage): Deleted.
+        (Inspector::RemoteInspector::receivedAutomaticInspectionRejectMessage): Deleted.
+        * inspector/remote/RemoteInspectorConstants.h:
+        * inspector/remote/RemoteInspectorDebuggable.cpp:
+        (Inspector::RemoteInspectorDebuggable::setRemoteDebuggingAllowed):
+        (Inspector::RemoteInspectorDebuggable::pauseWaitingForAutomaticInspection): Deleted.
+        * inspector/remote/RemoteInspectorDebuggable.h:
+        * inspector/remote/RemoteInspectorDebuggableConnection.h:
+        * inspector/remote/RemoteInspectorDebuggableConnection.mm:
+        (Inspector::RemoteInspectorDebuggableConnection::setup):
+        * runtime/JSGlobalObjectDebuggable.cpp:
+        (JSC::JSGlobalObjectDebuggable::connect):
+        (JSC::JSGlobalObjectDebuggable::pauseWaitingForAutomaticInspection): Deleted.
+        * runtime/JSGlobalObjectDebuggable.h:
+
+2014-09-18  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Should be able to attach a debugger to a JSContext before anything is executed
+        https://bugs.webkit.org/show_bug.cgi?id=136893
+
+        Reviewed by Timothy Hatcher.
+
+        Adds new remote inspector protocol handling for automatic inspection.
+        Debuggers can signal they have enabled automatic inspection, and
+        when debuggables are created the current application will pause to
+        see if the debugger will inspect or decline to inspect the debuggable.
+
+        * inspector/remote/RemoteInspectorConstants.h:
+        * inspector/remote/RemoteInspector.h:
+        * inspector/remote/RemoteInspector.mm:
+        (Inspector::globalAutomaticInspectionState):
+        (Inspector::RemoteInspector::RemoteInspector):
+        (Inspector::RemoteInspector::start):
+        When first starting, check the global "is there an auto-inspect" debugger state.
+        This is necessary so that the current application knows if it should pause or
+        not when a debuggable is created, even without having connected to webinspectord yet.
+
+        (Inspector::RemoteInspector::updateDebuggableAutomaticInspectCandidate):
+        When a debuggable has enabled remote inspection, take this path to propose
+        it as an automatic inspection candidate if there is an auto-inspect debugger.
+
+        (Inspector::RemoteInspector::sendAutomaticInspectionCandidateMessage):
+        Send the automatic inspection candidate message.
+
+        (Inspector::RemoteInspector::receivedSetupMessage):
+        (Inspector::RemoteInspector::setupFailed):
+        (Inspector::RemoteInspector::setupSucceeded):
+        After attempting to open an inspector, unpause if it was for the
+        automatic inspection candidate.
+
+        (Inspector::RemoteInspector::waitingForAutomaticInspection):
+        When running a nested runloop, check if we should remain paused.
+
+        (Inspector::RemoteInspector::setupXPCConnectionIfNeeded):
+        If by the time we connect to webinspectord we have a candidate, then
+        immediately send the candidate message.
+
+        (Inspector::RemoteInspector::stopInternal):
+        (Inspector::RemoteInspector::xpcConnectionFailed):
+        In error cases, clear our state.
+
+        (Inspector::RemoteInspector::xpcConnectionReceivedMessage):
+        (Inspector::RemoteInspector::receivedAutomaticInspectionConfigurationMessage):
+        (Inspector::RemoteInspector::receivedAutomaticInspectionRejectMessage):
+        Update state when receiving new messages.
+
+
+        * inspector/remote/RemoteInspectorDebuggable.h:
+        * inspector/remote/RemoteInspectorDebuggable.cpp:
+        (Inspector::RemoteInspectorDebuggable::setRemoteDebuggingAllowed):
+        Special case when a debuggable is newly allowed to be debuggable.
+
+        (Inspector::RemoteInspectorDebuggable::pauseWaitingForAutomaticInspection):
+        Run a nested run loop while this is an automatic inspection candidate.
+
+        * inspector/JSGlobalObjectInspectorController.h:
+        * inspector/JSGlobalObjectInspectorController.cpp:
+        (Inspector::JSGlobalObjectInspectorController::JSGlobalObjectInspectorController):
+        (Inspector::JSGlobalObjectInspectorController::connectFrontend):
+        When the inspector starts via automatic inspection automatically pause.
+        We plan on removing this condition by having the frontend signal to the
+        backend when it is completely initialized.
+        
+        * inspector/remote/RemoteInspectorDebuggableConnection.h:
+        * inspector/remote/RemoteInspectorDebuggableConnection.mm:
+        (Inspector::RemoteInspectorDebuggableConnection::setup):
+        Pass on the flag of whether or not this was automatic inspection.
+
+        * runtime/JSGlobalObjectDebuggable.h:
+        * runtime/JSGlobalObjectDebuggable.cpp:
+        (JSC::JSGlobalObjectDebuggable::connect):
+        (JSC::JSGlobalObjectDebuggable::pauseWaitingForAutomaticInspection):
+        When pausing in a JSGlobalObject we need to release the API lock.
+
+2014-09-18  Eva Balazsfalvi  <evab.u-szeged@partner.samsung.com>
+
+        Fix "Tools/Scripts/build-webkit --efl --no-inspector" build
+        https://bugs.webkit.org/show_bug.cgi?id=136912
+
+        Reviewed by Darin Adler.
+
+        * runtime/TypeSet.cpp:
+        (JSC::TypeSet::leastCommonAncestor):
+
+2014-09-17  Michael Saboff  <msaboff@apple.com>
+
+        Change CallFrame to use Callee instead of JSScope to implement vm()
+        https://bugs.webkit.org/show_bug.cgi?id=136894
+
+        Reviewed by Geoffrey Garen.
+
+        Added JSCell::vm() method that can be used on any JSObject.  Changed CallFrame::vm() to
+        use JSCell::vm with the Callee.  Made similar changes in the LLInt.
+        In support of this, changed JSGlobalObject::init() to take a VM& parameter, as there is
+        a chicken/egg problem with trying to use the Callee in the global exec before the Callee
+        has been create.  Besides, the vm is readily available in finishCreation(), the caller of
+        init().
+
+        * llint/LowLevelInterpreter32_64.asm:
+        * llint/LowLevelInterpreter64.asm:
+        Changed the calculation of CallFrame::VM to use the Callee instead of JSScope.
+
+        * runtime/JSCell.h:
+        * runtime/JSCellInlines.h:
+        (JSC::JSCell::vm): New method for getting VM from the pointer.
+        (JSC::ExecState::vm): Moved this method from JSScope.h to here since this file
+        contains the implementation of JSCell::vm(), this file is included by all users
+        of CallFrame::vm, and lastly putting it in CallFrameInlines.h required changing
+        many other .h files and possible the WebCore generator generate-bindings.pl.
+
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::init):
+        * runtime/JSGlobalObject.h:
+        (JSC::JSGlobalObject::finishCreation):
+        Changed init() to take a VM parameter.
+
+        * runtime/JSScope.h:
+        (JSC::ExecState::vm): Deleted.
+
+2014-09-16  Filip Pizlo  <fpizlo@apple.com>
+
+        Unreviewed, disable native inlining because it causes build failures.
+
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+
+2014-09-16  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Reduce a bit of churn setting initial remote inspection state
+        https://bugs.webkit.org/show_bug.cgi?id=136875
+
+        Reviewed by Timothy Hatcher.
+
+        * API/JSContextRef.cpp:
+        (JSGlobalContextCreateInGroup):
+        Set the defaultl remote debuggable state at the API boundary.
+
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::init):
+        Do not set remote debuggable state here. Let clients set it.
+
+2014-09-16  Yusuke Suzuki  <utatane.tea@gmail.com>
+
+        Promise: Drop Promise.cast
+        https://bugs.webkit.org/show_bug.cgi?id=136222
+
+        Reviewed by Sam Weinig.
+
+        Promise.cast is dropped and Promise.resolve is replaced with old Promise.cast.
+
+        * runtime/CommonIdentifiers.h:
+        * runtime/JSPromiseConstructor.cpp:
+        (JSC::JSPromiseConstructorFuncResolve):
+        (JSC::JSPromiseConstructorFuncRace):
+        (JSC::JSPromiseConstructorFuncAll):
+        (JSC::JSPromiseConstructorFuncCast): Deleted.
+
+2014-09-16  Filip Pizlo  <fpizlo@apple.com>
+
+        Local OSR availability calculation should be reusable
+        https://bugs.webkit.org/show_bug.cgi?id=136860
+
+        Reviewed by Oliver Hunt.
+        
+        Previously, the FTL lowering repeated some of the logic of the OSR availability analysis
+        phase. Humorously, it actually did this logic a bit differently; for example the phase
+        would claim that a SetLocal makes both the flush and the node available while the FTL
+        only claimed that the flush was available. This different was benign, but still: yuck!
+        
+        Also, previously if you wanted to use availability information then you'd have to repeat
+        some of the logic that both the phase itself and the FTL lowering already had.
+        Presumably, you could get epic style points for finding other benign ways in which to
+        make your copy of the logic different from the other two!
+        
+        This reduces the amount of style points one could conceivably get in the future when
+        hacking JSC, by creating a single reusable thingy for computing local OSR availability.
+
+        * dfg/DFGOSRAvailabilityAnalysisPhase.cpp:
+        (JSC::DFG::OSRAvailabilityAnalysisPhase::run):
+        (JSC::DFG::LocalOSRAvailabilityCalculator::LocalOSRAvailabilityCalculator):
+        (JSC::DFG::LocalOSRAvailabilityCalculator::~LocalOSRAvailabilityCalculator):
+        (JSC::DFG::LocalOSRAvailabilityCalculator::beginBlock):
+        (JSC::DFG::LocalOSRAvailabilityCalculator::executeNode):
+        * dfg/DFGOSRAvailabilityAnalysisPhase.h:
+        * ftl/FTLLowerDFGToLLVM.cpp:
+        (JSC::FTL::LowerDFGToLLVM::LowerDFGToLLVM):
+        (JSC::FTL::LowerDFGToLLVM::compileBlock):
+        (JSC::FTL::LowerDFGToLLVM::compileNode):
+        (JSC::FTL::LowerDFGToLLVM::compileSetLocal):
+        (JSC::FTL::LowerDFGToLLVM::compileInvalidationPoint):
+        (JSC::FTL::LowerDFGToLLVM::appendOSRExit):
+        (JSC::FTL::LowerDFGToLLVM::buildExitArguments):
+        (JSC::FTL::LowerDFGToLLVM::availability):
+        (JSC::FTL::LowerDFGToLLVM::compileMovHint): Deleted.
+        (JSC::FTL::LowerDFGToLLVM::compileZombieHint): Deleted.
+        (JSC::FTL::LowerDFGToLLVM::initializeOSRExitStateForBlock): Deleted.
+
+2014-09-16  Csaba Osztrogonác  <ossy@webkit.org>
+
+        JSC test gardening
+        https://bugs.webkit.org/show_bug.cgi?id=136823
+
+        Reviewed by Geoffrey Garen.
+
+        * tests/mozilla/mozilla-tests.yaml: Unskip passing tests.
+
+2014-09-15  Michael Saboff  <msaboff@apple.com>
+
+        Create a JSCallee for GlobalExec object
+        https://bugs.webkit.org/show_bug.cgi?id=136840
+
+        Reviewed by Geoffrey Garen.
+
+        Added m_globalCallee, initialized it and then used it to set the globalExec's callee.
+
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::init):
+        (JSC::JSGlobalObject::visitChildren):
+        * runtime/JSGlobalObject.h:
+
+2014-09-14  Filip Pizlo  <fpizlo@apple.com>
+
+        DFG ref count calculation should be reusable
+        https://bugs.webkit.org/show_bug.cgi?id=136811
+
+        Reviewed by Oliver Hunt.
+        
+        Henceforth if you call Graph::computeRefCounts(), a nifty O(n) operation, every Node
+        will be able to tell you how many places it is used from. Currently only DCE uses this,
+        but it will be useful for https://bugs.webkit.org/show_bug.cgi?id=136330.
+
+        * dfg/DFGDCEPhase.cpp:
+        (JSC::DFG::DCEPhase::run):
+        (JSC::DFG::DCEPhase::findTypeCheckRoot): Deleted.
+        (JSC::DFG::DCEPhase::countNode): Deleted.
+        (JSC::DFG::DCEPhase::countEdge): Deleted.
+        * dfg/DFGGraph.cpp:
+        (JSC::DFG::Graph::computeRefCounts):
+        * dfg/DFGGraph.h:
+
+2014-09-12  Michael Saboff  <msaboff@apple.com>
+
+        Merge JSGlobalObject::reset() into ::init()
+        https://bugs.webkit.org/show_bug.cgi?id=136800
+
+        Reviewed by Oliver Hunt.
+
+        Moved the contents of reset() into init().
+        Note that the diff shows more changes.
+
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::init): Moved body of reset() into init.
+        (JSC::JSGlobalObject::put):
+        (JSC::JSGlobalObject::defineOwnProperty):
+        (JSC::JSGlobalObject::addGlobalVar):
+        (JSC::JSGlobalObject::addFunction):
+        (JSC::lastInPrototypeChain):
+        (JSC::JSGlobalObject::reset): Deleted.
+        * runtime/JSGlobalObject.h:
+
+2014-09-12  Michael Saboff  <msaboff@apple.com>
+
+        Add JSCallee to program and eval CallFrames
+        https://bugs.webkit.org/show_bug.cgi?id=136785
+
+        Reviewed by Mark Lam.
+
+        Populated Callee slot for program and call eval CallFrames with a JSCallee objects.
+        Made supporting changes including adding a JSCallee structure to global object and adding
+        JSCallee::create() method.  Added code so that the newly added callee object won't be
+        returned by Function.caller.  Changed null pointer checks of callee to check the if
+        the type is JSFunction* or JSCallee*.
+
+        * debugger/DebuggerCallFrame.cpp:
+        (JSC::DebuggerCallFrame::functionName):
+        (JSC::DebuggerCallFrame::type):
+        * profiler/LegacyProfiler.cpp:
+        (JSC::LegacyProfiler::createCallIdentifier):
+        * interpreter/Interpreter.cpp:
+        (JSC::unwindCallFrame):
+        Changed checks of callee is a JSFunction* or JSCallee* instead of just checking
+        if it is null or not.
+
+        * interpreter/Interpreter.cpp:
+        (JSC::Interpreter::execute): Create and use JSCallee objects for execute(EvalExecutable, ...)
+        and execute(ProgramExecutable, ...)
+
+        * jit/JITCode.cpp:
+        (JSC::JITCode::execute): Use jsDynamicCast to cast only JSFunctions.
+
+        * runtime/JSCallee.cpp:
+        (JSC::JSCallee::create): Not used, therefore deleted.
+
+        * runtime/JSCallee.h:
+        (JSC::JSCallee::create): Added.
+
+        * runtime/JSFunction.cpp:
+        (JSC::JSFunction::callerGetter): Added test to return null for JSCallee's that aren't
+        JSFunction's.  This can only be the case when the JSCallee comes from a program or
+        call eval CallFrame.
+
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::reset):
+        (JSC::JSGlobalObject::visitChildren):
+        * runtime/JSGlobalObject.h:
+        (JSC::JSGlobalObject::calleeStructure):
+        Added new JSCallee structure.
+
+2014-09-10  Jon Honeycutt  <jhoneycutt@apple.com>
+
+        Re-add the request autocomplete feature
+
+        <https://bugs.webkit.org/show_bug.cgi?id=136730>
+
+        This feature was rolled out in r148731 because it was only used by
+        Chromium. As we consider supporting this feature, roll it back in, but
+        leave it disabled.
+
+        This rolls out r148731 (which removed the feature) with small changes
+        needed to make the code build in ToT, to match modern style, to make
+        the tests run, and to remove unused code.
+
+        Reviewed by Andy Estes.
+
+        * Configurations/FeatureDefines.xcconfig:
+
+2014-09-12  Julien Brianceau  <jbriance@cisco.com>
+
+        [x86] moveDoubleToInts() does not clobber its source register anymore
+        https://bugs.webkit.org/show_bug.cgi?id=131690
+
+        Reviewed by Oliver Hunt.
+
+        * assembler/MacroAssemblerX86.h:
+        (JSC::MacroAssemblerX86::moveDoubleToInts):
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::compileValueRep):
+        * jit/SpecializedThunkJIT.h:
+        (JSC::SpecializedThunkJIT::returnDouble):
+
+2014-09-12  Mark Lam  <mark.lam@apple.com>
+
+        Unreviewed build fix for CLOOP build.
+
+        * runtime/JSCallee.h:
+
+2014-09-12  Michael Saboff  <msaboff@apple.com>
+
+        Remove unneeded declarations from JSCallee.h
+        https://bugs.webkit.org/show_bug.cgi?id=136783
+
+        Reviewed by Mark Lam.
+
+        * runtime/JSCallee.h:
+        (JSCallee::name): Deleted.
+        (JSCallee::displayName): Deleted.
+        (JSCallee::calculatedDisplayName): Deleted.
+
+2014-09-11  Brian J. Burg  <burg@cs.washington.edu>
+
+        Web Inspector: disambiguate double and integer primitive types in the protocol
+        https://bugs.webkit.org/show_bug.cgi?id=136606
+
+        Reviewed by Timothy Hatcher.
+
+        Right now it's really easy to mix up doubles and integers when serializing or deserializing
+        values for the inspector protocol. This patch disambiguates setting/getting doubles and integers
+        so that it is clearer as to which type is intended.
+
+        A new InspectorValue::Type is added for Integer types, and the Number type is renamed to Double.
+        The existing callsites for asNumber/getNumber/setNumber have been fixed.
+
+        Address various integration points to make sure the right type tag is assigned to InspectorValues.
+
+        * bindings/ScriptValue.cpp:
+        (Deprecated::jsToInspectorValue): Make an Integer if the JSValue is Int52 or smaller.
+        * inspector/InjectedScriptManager.cpp:
+        (Inspector::InjectedScriptManager::injectedScriptForObjectId):
+        * inspector/InspectorBackendDispatcher.cpp:
+        (Inspector::InspectorBackendDispatcher::dispatch):
+        (Inspector::InspectorBackendDispatcher::sendResponse):
+        (Inspector::InspectorBackendDispatcher::reportProtocolError):
+        (Inspector::AsMethodBridges::asInteger):
+        (Inspector::AsMethodBridges::asDouble):
+        (Inspector::InspectorBackendDispatcher::getInteger):
+        (Inspector::InspectorBackendDispatcher::getDouble):
+        (Inspector::AsMethodBridges::asInt): Deleted.
+        (Inspector::InspectorBackendDispatcher::getInt): Deleted.
+        * inspector/InspectorBackendDispatcher.h:
+        * inspector/InspectorProtocolTypes.h: Remove the special case for checking int type tags.
+        (Inspector::Protocol::ArrayItemHelper<int>::Traits::pushRaw):
+        (Inspector::Protocol::ArrayItemHelper<double>::Traits::pushRaw):
+        (Inspector::Protocol::BindingTraits<int>::assertValueHasExpectedType): Deleted.
+        * inspector/InspectorValues.cpp: Allow integers and doubles to be convertible using asInteger/asDouble.
+        (Inspector::InspectorValue::asDouble):
+        (Inspector::InspectorValue::asInteger):
+        (Inspector::InspectorBasicValue::asDouble):
+        (Inspector::InspectorBasicValue::asInteger):
+        (Inspector::InspectorBasicValue::writeJSON):
+        (Inspector::InspectorValue::asNumber): Deleted.
+        (Inspector::InspectorBasicValue::asNumber): Deleted.
+        * inspector/InspectorValues.h:
+        (Inspector::InspectorObjectBase::setInteger):
+        (Inspector::InspectorObjectBase::setDouble):
+        (Inspector::InspectorArrayBase::pushInteger):
+        (Inspector::InspectorArrayBase::pushDouble):
+        (Inspector::InspectorObjectBase::setNumber): Deleted.
+        (Inspector::InspectorArrayBase::pushInt): Deleted.
+        (Inspector::InspectorArrayBase::pushNumber): Deleted.
+        * inspector/agents/InspectorDebuggerAgent.cpp:
+        (Inspector::buildObjectForBreakpointCookie):
+        (Inspector::InspectorDebuggerAgent::breakpointActionsFromProtocol):
+        (Inspector::parseLocation):
+        (Inspector::InspectorDebuggerAgent::didParseSource):
+        * inspector/agents/InspectorRuntimeAgent.cpp:
+        (Inspector::InspectorRuntimeAgent::getRuntimeTypesForVariablesAtOffsets):
+        * inspector/scripts/codegen/generator.py: Update emitted code and rebaseline test results.
+        (Generator.keyed_get_method_for_type):
+        (Generator.keyed_set_method_for_type):
+        * inspector/scripts/tests/expected/commands-with-async-attribute.json-result:
+        * inspector/scripts/tests/expected/commands-with-optional-call-return-parameters.json-result:
+        * inspector/scripts/tests/expected/domains-with-varying-command-sizes.json-result:
+        * inspector/scripts/tests/expected/events-with-optional-parameters.json-result:
+        * inspector/scripts/tests/expected/generate-domains-with-feature-guards.json-result:
+        * inspector/scripts/tests/expected/type-declaration-object-type.json-result:
+        * inspector/scripts/tests/expected/type-requiring-runtime-casts.json-result:
+        * replay/EncodedValue.cpp:
+        (JSC::EncodedValue::convertTo<double>):
+        (JSC::EncodedValue::convertTo<float>):
+        (JSC::EncodedValue::convertTo<int32_t>):
+        (JSC::EncodedValue::convertTo<int64_t>):
+        (JSC::EncodedValue::convertTo<uint32_t>):
+        (JSC::EncodedValue::convertTo<uint64_t>):
+
+2014-09-11  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Web Inspector: Occasional ASSERT closing web inspector
+        https://bugs.webkit.org/show_bug.cgi?id=136762
+
+        Reviewed by Timothy Hatcher.
+
+        It is harmless, and indeed possible to have an empty set of listeners
+        now that each Page gets its own PageDebugServer instead of a shared
+        global. So we should replace the null checks with isEmpty checks.
+        Since nobody was ever returning null, convert to references as well.
+
+        * inspector/JSGlobalObjectScriptDebugServer.h:
+        * inspector/ScriptDebugServer.cpp:
+        (Inspector::ScriptDebugServer::dispatchBreakpointActionLog):
+        (Inspector::ScriptDebugServer::dispatchBreakpointActionSound):
+        (Inspector::ScriptDebugServer::dispatchBreakpointActionProbe):
+        (Inspector::ScriptDebugServer::sourceParsed):
+        (Inspector::ScriptDebugServer::dispatchFunctionToListeners):
+        (Inspector::ScriptDebugServer::notifyDoneProcessingDebuggerEvents):
+        (Inspector::ScriptDebugServer::handlePause):
+        (Inspector::ScriptDebugServer::needPauseHandling): Deleted.
+        * inspector/ScriptDebugServer.h:
+
+2014-09-10  Michael Saboff  <msaboff@apple.com>
+
+        Move JSScope out of JSFunction into separate JSCallee class
+        https://bugs.webkit.org/show_bug.cgi?id=136725
+
+        Reviewed by Oliver Hunt.
+
+        Created new JSCallee class that contains a JSScope*.  Changed JSFunction to inherit from
+        JSCallee.
+
+        * CMakeLists.txt:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj.filters:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        Build changes.  Added JSCallee.cpp and JSCallee.h.
+
+        * runtime/JSCallee.cpp: Added.
+        (JSC::JSCallee::create):
+        (JSC::JSCallee::destroy):
+        (JSC::JSCallee::JSCallee):
+        (JSC::JSCallee::finishCreation):
+        (JSC::JSCallee::visitChildren):
+        (JSC::JSCallee::getOwnPropertySlot): Pass through wrapper function.
+        (JSC::JSCallee::getOwnNonIndexPropertyNames): Pass through wrapper function.
+        (JSC::JSCallee::put): Pass through wrapper function.
+        (JSC::JSCallee::deleteProperty): Pass through wrapper function.
+        (JSC::JSCallee::defineOwnProperty): Pass through wrapper function.
+
+        * runtime/JSCallee.h: Added.
+        (JSC::JSCallee::scope):
+        (JSC::JSCallee::scopeUnchecked):
+        (JSC::JSCallee::setScope):
+        (JSC::JSCallee::createStructure):
+        (JSC::JSCallee::offsetOfScopeChain):
+
+        * runtime/JSFunction.cpp:
+        (JSC::JSFunction::JSFunction):
+        (JSC::JSFunction::addNameScopeIfNeeded):
+        (JSC::JSFunction::visitChildren):
+        * runtime/JSFunction.h:
+        (JSC::JSFunction::scope): Deleted.
+        (JSC::JSFunction::scopeUnchecked): Deleted.
+        (JSC::JSFunction::setScope): Deleted.
+        (JSC::JSFunction::offsetOfScopeChain): Deleted.
+        * runtime/JSFunctionInlines.h:
+        (JSC::JSFunction::JSFunction):
+        Changed to reference JSCallee and its methods.
+
+        * runtime/JSType.h: Added JSCallee as a TypeEnum.
+
+2014-09-11  Filip Pizlo  <fpizlo@apple.com>
+
+        REGRESSION (r172129): Vine pages load as blank
+        https://bugs.webkit.org/show_bug.cgi?id=136655
+        rdar://problem/18281215
+
+        Reviewed by Michael Saboff.
+        
+        If lastNode is something that is subject to DCE, then removing the Phantom's reference to something
+        that lastNode references means that the thing being referenced may no longer be kept alive for OSR.
+        Teach PhantomRemovalPhase that it's only safe to do this if lastNode is a Phantom. That's probably too
+        conservative, but that's fine since this is mainly just an optimization to make the IR sane to read and
+        reasonably compact; it's OK if we miss cases here.
+
+        * dfg/DFGPhantomRemovalPhase.cpp:
+        (JSC::DFG::PhantomRemovalPhase::run):
+        * tests/stress/remove-phantom-after-setlocal.js: Added.
+
+2014-09-11  Bear Travis  <betravis@adobe.com>
+
+        [CSS Font Loading] Enable CSS Font Loading on Mac
+        https://bugs.webkit.org/show_bug.cgi?id=135473
+
+        Reviewed by Antti Koivisto.
+
+        Enable CSS Font Loading in FeatureDefines.
+
+        * Configurations/FeatureDefines.xcconfig:
+
+2014-09-11  Joseph Pecoraro  <pecoraro@apple.com>
+
+        Unreviewed rebaseline of inspector generator test results after r173120.
+
+        * inspector/scripts/tests/expected/commands-with-async-attribute.json-result:
+        * inspector/scripts/tests/expected/commands-with-optional-call-return-parameters.json-result:
+        * inspector/scripts/tests/expected/domains-with-varying-command-sizes.json-result:
+        * inspector/scripts/tests/expected/generate-domains-with-feature-guards.json-result:
+
+2014-09-11  Oliver Hunt  <oliver@apple.com>
+
+        Rename activation to be more in line with spec language
+        https://bugs.webkit.org/show_bug.cgi?id=136721
+
+        Reviewed by Michael Saboff.
+
+        Somewhat bigger than the last one, but still just a rename.
+
+        * CMakeLists.txt:
+        * JavaScriptCore.order:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj.filters:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * bytecode/BytecodeList.json:
+        * bytecode/BytecodeUseDef.h:
+        (JSC::computeUsesForBytecodeOffset):
+        (JSC::computeDefsForBytecodeOffset):
+        * bytecode/CallVariant.h:
+        * bytecode/CodeBlock.cpp:
+        (JSC::CodeBlock::dumpBytecode):
+        (JSC::CodeBlock::CodeBlock):
+        (JSC::CodeBlock::finalizeUnconditionally):
+        (JSC::CodeBlock::isCaptured):
+        (JSC::CodeBlock::nameForRegister):
+        * bytecode/CodeBlock.h:
+        (JSC::CodeBlock::setActivationRegister):
+        (JSC::CodeBlock::activationRegister):
+        (JSC::CodeBlock::uncheckedActivationRegister):
+        (JSC::CodeBlock::needsActivation):
+        * bytecode/Instruction.h:
+        * bytecode/UnlinkedCodeBlock.h:
+        (JSC::UnlinkedCodeBlock::setActivationRegister):
+        (JSC::UnlinkedCodeBlock::activationRegister):
+        (JSC::UnlinkedCodeBlock::hasActivationRegister):
+        * bytecompiler/BytecodeGenerator.cpp:
+        (JSC::BytecodeGenerator::BytecodeGenerator):
+        (JSC::BytecodeGenerator::emitReturn):
+        * bytecompiler/BytecodeGenerator.h:
+        * debugger/DebuggerCallFrame.cpp:
+        (JSC::DebuggerCallFrame::scope):
+        * debugger/DebuggerScope.cpp:
+        (JSC::DebuggerScope::isFunctionOrEvalScope):
+        * dfg/DFGByteCodeParser.cpp:
+        (JSC::DFG::ByteCodeParser::parseBlock):
+        * dfg/DFGCapabilities.cpp:
+        (JSC::DFG::capabilityLevel):
+        * dfg/DFGGraph.cpp:
+        (JSC::DFG::Graph::tryGetActivation):
+        (JSC::DFG::Graph::tryGetRegisters):
+        * dfg/DFGGraph.h:
+        * dfg/DFGNodeType.h:
+        * dfg/DFGOperations.cpp:
+        * dfg/DFGSpeculativeJIT32_64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+        * dfg/DFGSpeculativeJIT64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+        * interpreter/CallFrame.cpp:
+        (JSC::CallFrame::lexicalEnvironment):
+        (JSC::CallFrame::setActivation):
+        (JSC::CallFrame::activation): Deleted.
+        * interpreter/CallFrame.h:
+        * interpreter/Interpreter.cpp:
+        (JSC::unwindCallFrame):
+        * interpreter/Register.h:
+        * jit/JIT.cpp:
+        (JSC::JIT::privateCompileMainPass):
+        * jit/JIT.h:
+        * jit/JITOpcodes.cpp:
+        (JSC::JIT::emit_op_tear_off_lexical_environment):
+        (JSC::JIT::emit_op_tear_off_arguments):
+        (JSC::JIT::emit_op_create_lexical_environment):
+        (JSC::JIT::emit_op_tear_off_activation): Deleted.
+        (JSC::JIT::emit_op_create_activation): Deleted.
+        * jit/JITOpcodes32_64.cpp:
+        (JSC::JIT::emit_op_tear_off_lexical_environment):
+        (JSC::JIT::emit_op_tear_off_arguments):
+        (JSC::JIT::emit_op_create_lexical_environment):
+        (JSC::JIT::emit_op_tear_off_activation): Deleted.
+        (JSC::JIT::emit_op_create_activation): Deleted.
+        * jit/JITOperations.cpp:
+        * jit/JITOperations.h:
+        * llint/LLIntSlowPaths.cpp:
+        (JSC::LLInt::LLINT_SLOW_PATH_DECL):
+        * llint/LLIntSlowPaths.h:
+        * llint/LowLevelInterpreter32_64.asm:
+        * llint/LowLevelInterpreter64.asm:
+        * runtime/Arguments.cpp:
+        (JSC::Arguments::visitChildren):
+        (JSC::Arguments::tearOff):
+        (JSC::Arguments::didTearOffActivation):
+        * runtime/Arguments.h:
+        (JSC::Arguments::offsetOfActivation):
+        (JSC::Arguments::argument):
+        (JSC::Arguments::finishCreation):
+        * runtime/CommonSlowPaths.cpp:
+        * runtime/JSFunction.h:
+        * runtime/JSGlobalObject.cpp:
+        (JSC::JSGlobalObject::reset):
+        (JSC::JSGlobalObject::visitChildren):
+        * runtime/JSGlobalObject.h:
+        (JSC::JSGlobalObject::activationStructure):
+        * runtime/JSLexicalEnvironment.cpp: Renamed from Source/JavaScriptCore/runtime/JSActivation.cpp.
+        (JSC::JSLexicalEnvironment::visitChildren):
+        (JSC::JSLexicalEnvironment::symbolTableGet):
+        (JSC::JSLexicalEnvironment::symbolTablePut):
+        (JSC::JSLexicalEnvironment::getOwnNonIndexPropertyNames):
+        (JSC::JSLexicalEnvironment::symbolTablePutWithAttributes):
+        (JSC::JSLexicalEnvironment::getOwnPropertySlot):
+        (JSC::JSLexicalEnvironment::put):
+        (JSC::JSLexicalEnvironment::deleteProperty):
+        (JSC::JSLexicalEnvironment::toThis):
+        (JSC::JSLexicalEnvironment::argumentsGetter):
+        * runtime/JSLexicalEnvironment.h: Renamed from Source/JavaScriptCore/runtime/JSActivation.h.
+        (JSC::JSLexicalEnvironment::create):
+        (JSC::JSLexicalEnvironment::createStructure):
+        (JSC::JSLexicalEnvironment::JSLexicalEnvironment):
+        (JSC::asActivation):
+        (JSC::Register::lexicalEnvironment):
+        (JSC::JSLexicalEnvironment::registersOffset):
+        (JSC::JSLexicalEnvironment::tearOff):
+        (JSC::JSLexicalEnvironment::isTornOff):
+        (JSC::JSLexicalEnvironment::storageOffset):
+        (JSC::JSLexicalEnvironment::storage):
+        (JSC::JSLexicalEnvironment::allocationSize):
+        (JSC::JSLexicalEnvironment::isValidIndex):
+        (JSC::JSLexicalEnvironment::isValid):
+        (JSC::JSLexicalEnvironment::registerAt):
+        * runtime/JSObject.h:
+        * runtime/JSScope.cpp:
+        (JSC::abstractAccess):
+        * runtime/JSScope.h:
+        (JSC::ResolveOp::ResolveOp):
+        * runtime/JSSymbolTableObject.cpp:
+        * runtime/StrictEvalActivation.h:
+        (JSC::StrictEvalActivation::create):
+        * runtime/VM.cpp:
+
+2014-09-11  László Langó  <llango.u-szeged@partner.samsung.com>
+
+        [JavaScriptCore] Fix FTL on platform EFL.
+        https://bugs.webkit.org/show_bug.cgi?id=133571
+
+        Reviewed by Filip Pizlo.
+
+        There are no compact_unwind sections on Linux systems so FTL crashes.
+        We have to parse eh_frame in FTLUnwindInfo instead of compact_unwind
+        and get the information for stack unwinding from there.
+
+        * CMakeLists.txt: Revert r169181.
+        * ftl/FTLCompile.cpp:
+        Change section name literals to use SECTION_NAME macro, because of architecture differencies.
+        (JSC::FTL::mmAllocateCodeSection):
+        (JSC::FTL::mmAllocateDataSection):
+        (JSC::FTL::compile):
+        * ftl/FTLJITCode.h:
+        We need the SECTION_NAME macro in FTLCompile and FTLLink, so we define it here.
+        * ftl/FTLLink.cpp:
+        (JSC::FTL::link):
+        * ftl/FTLState.h:
+        * ftl/FTLState.cpp:
+        (JSC::FTL::State::State):
+        * ftl/FTLUnwindInfo.h:
+        * ftl/FTLUnwindInfo.cpp:
+        Lift the eh_frame parsing method from LLVM/libcxxabi project and modify it for our purposes.
+        Parse eh_frame on Linux instead of compact_unwind.
+        (JSC::FTL::UnwindInfo::parse):
+
+2014-09-10  Saam Barati  <saambarati1@gmail.com>
+
+        Web Inspector: Modify the type profiler runtime protocol to transfer some computation into the WebInspector
+        https://bugs.webkit.org/show_bug.cgi?id=136500
+
+        Reviewed by Joseph Pecoraro.
+
+        This patch changes the type profiler protocol to the Web Inspector
+        by moving the work of calculating computed properties that effect the UI 
+        into the Web Inspector. This makes the Web Inspector have control over the 
+        strings it displays as UI elements representing type information to the user 
+        instead of JavaScriptCore deciding on a convention for these strings.
+        JavaScriptCore now sends enough information to the Web Inspector so that 
+        it can compute the properties JavaScriptCore used to compute.
+
+        * inspector/agents/InspectorRuntimeAgent.cpp:
+        (Inspector::InspectorRuntimeAgent::getRuntimeTypesForVariablesAtOffsets):
+        * inspector/protocol/Runtime.json:
+        * runtime/TypeProfiler.cpp:
+        (JSC::TypeProfiler::getTypesForVariableAtOffsetForInspector): Deleted.
+        * runtime/TypeProfiler.h:
+        * runtime/TypeSet.cpp:
+        (JSC::TypeSet::inspectorTypeSet):
+        (JSC::StructureShape::leastCommonAncestor):
+        (JSC::StructureShape::inspectorRepresentation):
+        * runtime/TypeSet.h:
+
+2014-09-10  Akos Kiss  <akiss@inf.u-szeged.hu>
+
+        Apply ARM64-specific lowering to load/store instructions in offlineasm
+        https://bugs.webkit.org/show_bug.cgi?id=136569
+
+        Reviewed by Michael Saboff.
+
+        The standard risc lowering of load/store instructions with base +
+        immediate offset addresses is to move the offset to a temporary, add the
+        base to the temporary, and then change the load/store to use the
+        temporary + 0 immediate offset address. However, on ARM64, base +
+        register offset addressing mode is available, so it is unnecessary to
+        perform explicit register additions but it is enough to change load/store
+        to use base + temporary as the address.
+
+        * offlineasm/arm64.rb: Added arm64LowerMalformedLoadStoreAddresses
+
+2014-09-10  Oliver Hunt  <oliver@apple.com>
+
+        Rename JSVariableObject to JSEnvironmentRecord to align naming with ES spec
+        https://bugs.webkit.org/show_bug.cgi?id=136710
+
+        Reviewed by Anders Carlsson.
+
+        This is a trivial rename.
+
+        * CMakeLists.txt:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj.filters:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * dfg/DFGAbstractHeap.h:
+        * dfg/DFGClobberize.h:
+        (JSC::DFG::clobberize):
+        * dfg/DFGSpeculativeJIT32_64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+        * dfg/DFGSpeculativeJIT64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+        * ftl/FTLAbstractHeapRepository.cpp:
+        * ftl/FTLAbstractHeapRepository.h:
+        * ftl/FTLLowerDFGToLLVM.cpp:
+        (JSC::FTL::LowerDFGToLLVM::compileGetClosureRegisters):
+        * jit/JITOpcodes32_64.cpp:
+        * jit/JITPropertyAccess.cpp:
+        (JSC::JIT::emitGetClosureVar):
+        (JSC::JIT::emitPutClosureVar):
+        * jit/JITPropertyAccess32_64.cpp:
+        (JSC::JIT::emitGetClosureVar):
+        (JSC::JIT::emitPutClosureVar):
+        * llint/LLIntOffsetsExtractor.cpp:
+        * llint/LowLevelInterpreter32_64.asm:
+        * llint/LowLevelInterpreter64.asm:
+        * runtime/JSActivation.cpp:
+        (JSC::JSActivation::getOwnNonIndexPropertyNames):
+        * runtime/JSActivation.h:
+        * runtime/JSEnvironmentRecord.cpp: Renamed from Source/JavaScriptCore/runtime/JSVariableObject.cpp.
+        * runtime/JSEnvironmentRecord.h: Renamed from Source/JavaScriptCore/runtime/JSVariableObject.h.
+        (JSC::JSEnvironmentRecord::registers):
+        (JSC::JSEnvironmentRecord::registerAt):
+        (JSC::JSEnvironmentRecord::addressOfRegisters):
+        (JSC::JSEnvironmentRecord::offsetOfRegisters):
+        (JSC::JSEnvironmentRecord::JSEnvironmentRecord):
+        * runtime/JSNameScope.h:
+        * runtime/JSSegmentedVariableObject.h:
+
+2014-09-10  Julien Brianceau   <jbriance@cisco.com>
+
+        [mips] Add missing parts and fix LLINT mips backend
+        https://bugs.webkit.org/show_bug.cgi?id=136706
+
+        Reviewed by Michael Saboff.
+
+        * llint/LowLevelInterpreter.asm: Fix invalid CalleeSave register number.
+        Implement initPCRelative and setEntryAddress macros.
+        * llint/LowLevelInterpreter32_64.asm: Fix register distribution in
+        doVMEntry macro.
+
+2014-09-10  Saam Barati  <saambarati1@gmail.com>
+
+        TypeSet needs a mode where it no longer profiles structure shapes
+        https://bugs.webkit.org/show_bug.cgi?id=136263
+
+        Reviewed by Filip Pizlo.
+
+        The TypeSet data structure used to gather as many StructureShape
+        objects as it encountered during type profiling. But, this meant 
+        that there was no upper limit on how many objects it could allocate. 
+        This patch places a fixed upper bound on the number of StructureShapes
+        allocated per TypeSet to prevent using too much memory for little gain
+        in type profiling usefulness.
+
+        StructureShape objects are now also aware of when they are created
+        from Structures which are dictionaries.
+
+        In total, this patch lays the final groundwork needed in refactoring 
+        the inspector protocol for the type profiler.
+
+        * runtime/Structure.cpp:
+        (JSC::Structure::toStructureShape):
+        * runtime/TypeProfiler.cpp:
+        (JSC::TypeProfiler::typeInformationForExpressionAtOffset):
+        * runtime/TypeSet.cpp:
+        (JSC::TypeSet::TypeSet):
+        (JSC::TypeSet::addTypeInformation):
+        (JSC::StructureShape::StructureShape):
+        (JSC::StructureShape::toJSONString):
+        (JSC::StructureShape::enterDictionaryMode):
+        * runtime/TypeSet.h:
+        (JSC::TypeSet::isOverflown):
+        * tests/typeProfiler/dictionary-mode.js: Added.
+        (wrapper):
+        * tests/typeProfiler/driver/driver.js:
+        * tests/typeProfiler/overflow.js: Added.
+        (wrapper.Proto):
+        (wrapper):
+
+2014-09-10  Peter Gal  <galpeter@inf.u-szeged.hu>
+
+        [MIPS] branch32WithPatch missing
+        https://bugs.webkit.org/show_bug.cgi?id=136696
+
+        Reviewed by Michael Saboff.
+
+        Added the missing branch32WithPatch. The implementation
+        is currently the same as the branchPtrithPatch because
+        the macro assembler supports only 32 bit MIPS.
+
+        * assembler/MacroAssemblerMIPS.h:
+        (JSC::MacroAssemblerMIPS::branch32WithPatch):
+
+2014-09-10  Dániel Bátyai  <dbatyai.u-szeged@partner.samsung.com>
+
+        Fix !ENABLE(DFG_JIT) build
+        https://bugs.webkit.org/show_bug.cgi?id=136702
+
+        Reviewed by Michael Saboff.
+
+        * bytecode/CallEdgeProfile.h:
+
+2014-09-09  Benjamin Poulain  <bpoulain@apple.com>
+
+        Disable the "unreachable-code" warning
+        https://bugs.webkit.org/show_bug.cgi?id=136677
+
+        Reviewed by Darin Adler.
+
+        * Configurations/Base.xcconfig:
+
+2014-09-08  Filip Pizlo  <fpizlo@apple.com>
+
+        DFG should have a reusable SSA builder
+        https://bugs.webkit.org/show_bug.cgi?id=136331
+
+        Reviewed by Oliver Hunt.
+        
+        We want to implement sophisticated SSA transformations like object allocation sinking
+        (https://bugs.webkit.org/show_bug.cgi?id=136330), but to do that, we need to be able to do
+        updates to SSA that require inserting new Phi's. This requires calculating where Phis go.
+        Previously, our Phi calculation was based on Aycock and Horspool's algorithm, and our
+        implementation of this algorithm only worked when doing CPS->SSA conversion. The code
+        could not be reused for cases where some phase happens to know that it introduced a few
+        defs in some blocks and it wants to figure out where the Phis should go. Moreover, even
+        the general algorithm of Aycock and Horspool is not well suited to such targetted SSA
+        updates, since it requires first inserting maximal Phis. That scales well when the Phis
+        were already there (like in our CPS form) but otherwise it's quite unnatural and may be
+        difficult to make efficient.
+        
+        The usual way of handling both SSA conversion and SSA update is to use Cytron et al's
+        algorithm based on dominance frontiers. For a while now, I've been working on creating a
+        Cytron-based SSA calculator that can be used both as a replacement for our current SSA
+        converter and as a reusable tool for any phase that needs to do SSA update. I previously
+        optimized our dominator calculation and representation to use dominator trees computed
+        using Lengauer and Tarjan's algorithm - mainly to make it more scalable to enumerate over
+        the set of blocks that dominate you or vice-versa, and then I implemented a dominance
+        frontier calculator. This patch implements the final step towards making SSA update
+        available to all SSA phases: it implements an SSACalculator that can tell you where Phis
+        go when given an arbitrary set of Defs. To keep things simple, and to ensure that we have
+        good test coverage for this SSACalculator, this patch replaces the old Aycock-Horspool
+        SSA converter with one based on the SSACalculator.
+        
+        This has no observable impact. It does reduce the amount of code in SSAConversionPhase.
+        But even better, it makes SSAConversionPhase have significantly less tricky logic. It
+        mostly just relies on SSACalculator to do the tricky stuff, and SSAConversionPhase mostly
+        just reasons about the weirdnesses unique to the ThreadedCPS form that it sees as input.
+        In fact, using the Cytron et al approach means that there isn't really any "smoke and
+        mirrors" trickyness related to SSA. SSACalculator's only "tricks" are using the pruned
+        iterated dominance frontier to place Phi's and using the dom tree to find reaching defs.
+        The complexity is mostly confined to Dominators, which computes various dominator-related
+        properties over the control flow graph. That class can be difficult to understand, but at
+        least it follows well-known graph theory wisdom.
+
+        * CMakeLists.txt:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * dfg/DFGAnalysis.h:
+        * dfg/DFGCSEPhase.cpp:
+        * dfg/DFGDCEPhase.cpp:
+        (JSC::DFG::DCEPhase::run):
+        * dfg/DFGDominators.h:
+        (JSC::DFG::Dominators::immediateDominatorOf):
+        (JSC::DFG::Dominators::forAllBlocksInIteratedDominanceFrontierOf):
+        (JSC::DFG::Dominators::forAllBlocksInPrunedIteratedDominanceFrontierOf):
+        * dfg/DFGGraph.cpp:
+        (JSC::DFG::Graph::dump):
+        (JSC::DFG::Graph::blocksInPreOrder):
+        (JSC::DFG::Graph::blocksInPostOrder):
+        (JSC::DFG::Graph::getBlocksInPreOrder): Deleted.
+        (JSC::DFG::Graph::getBlocksInPostOrder): Deleted.
+        * dfg/DFGGraph.h:
+        * dfg/DFGLICMPhase.cpp:
+        (JSC::DFG::LICMPhase::run):
+        * dfg/DFGNodeFlags.h:
+        * dfg/DFGPhase.cpp:
+        (JSC::DFG::Phase::beginPhase):
+        (JSC::DFG::Phase::endPhase):
+        * dfg/DFGPhase.h:
+        * dfg/DFGSSACalculator.cpp: Added.
+        (JSC::DFG::SSACalculator::Variable::dump):
+        (JSC::DFG::SSACalculator::Variable::dumpVerbose):
+        (JSC::DFG::SSACalculator::Def::dump):
+        (JSC::DFG::SSACalculator::SSACalculator):
+        (JSC::DFG::SSACalculator::~SSACalculator):
+        (JSC::DFG::SSACalculator::newVariable):
+        (JSC::DFG::SSACalculator::newDef):
+        (JSC::DFG::SSACalculator::nonLocalReachingDef):
+        (JSC::DFG::SSACalculator::reachingDefAtTail):
+        (JSC::DFG::SSACalculator::dump):
+        * dfg/DFGSSACalculator.h: Added.
+        (JSC::DFG::SSACalculator::Variable::index):
+        (JSC::DFG::SSACalculator::Variable::Variable):
+        (JSC::DFG::SSACalculator::Def::variable):
+        (JSC::DFG::SSACalculator::Def::block):
+        (JSC::DFG::SSACalculator::Def::value):
+        (JSC::DFG::SSACalculator::Def::Def):
+        (JSC::DFG::SSACalculator::variable):
+        (JSC::DFG::SSACalculator::computePhis):
+        (JSC::DFG::SSACalculator::phisForBlock):
+        (JSC::DFG::SSACalculator::reachingDefAtHead):
+        * dfg/DFGSSAConversionPhase.cpp:
+        (JSC::DFG::SSAConversionPhase::SSAConversionPhase):
+        (JSC::DFG::SSAConversionPhase::run):
+        (JSC::DFG::SSAConversionPhase::forwardPhiChildren): Deleted.
+        (JSC::DFG::SSAConversionPhase::forwardPhi): Deleted.
+        (JSC::DFG::SSAConversionPhase::forwardPhiEdge): Deleted.
+        (JSC::DFG::SSAConversionPhase::deduplicateChildren): Deleted.
+        * dfg/DFGSSAConversionPhase.h:
+        * dfg/DFGValidate.cpp:
+        (JSC::DFG::Validate::Validate):
+        (JSC::DFG::Validate::dumpGraphIfAppropriate):
+        (JSC::DFG::validate):
+        * dfg/DFGValidate.h:
+        * ftl/FTLLowerDFGToLLVM.cpp:
+        (JSC::FTL::LowerDFGToLLVM::lower):
+        * runtime/Options.h:
+
+2014-09-08  Commit Queue  <commit-queue@webkit.org>
+
+        Unreviewed, rolling out r173402.
+        https://bugs.webkit.org/show_bug.cgi?id=136649
+
+        Breaking buildw with error "unable to restore file position to
+        0x00000c60 for section __DWARF.__debug_info (errno = 9)"
+        (Requested by mlam_ on #webkit).
+
+        Reverted changeset:
+
+        "Move CallFrame and Register inlines functions out of
+        JSScope.h."
+        https://bugs.webkit.org/show_bug.cgi?id=136579
+        http://trac.webkit.org/changeset/173402
+
+2014-09-08  Mark Lam  <mark.lam@apple.com>
+
+        Move CallFrame and Register inlines functions out of JSScope.h.
+        <https://webkit.org/b/136579>
+
+        Reviewed by Geoffrey Garen.
+
+        This include fixing up some files to #include JSCInlines.h to pick up
+        these inline functions.  I also added JSCellInlines.h to JSCInlines.h
+        since it is included from many of the affected .cpp files.
+
+        * API/ObjCCallbackFunction.mm:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj:
+        * JavaScriptCore.vcxproj/JavaScriptCore.vcxproj.filters:
+        * JavaScriptCore.xcodeproj/project.pbxproj:
+        * bindings/ScriptValue.cpp:
+        * inspector/InjectedScriptHost.cpp:
+        * inspector/InjectedScriptManager.cpp:
+        * inspector/JSGlobalObjectInspectorController.cpp:
+        * inspector/JSJavaScriptCallFrame.cpp:
+        * inspector/ScriptDebugServer.cpp:
+        * interpreter/CallFrameInlines.h:
+        (JSC::CallFrame::vm):
+        (JSC::CallFrame::lexicalGlobalObject):
+        (JSC::CallFrame::globalThisValue):
+        * interpreter/RegisterInlines.h: Added.
+        (JSC::Register::operator=):
+        (JSC::Register::scope):
+        * runtime/ArgumentsIteratorConstructor.cpp:
+        * runtime/JSArrayIterator.cpp:
+        * runtime/JSCInlines.h:
+        * runtime/JSCJSValue.cpp:
+        * runtime/JSMapIterator.cpp:
+        * runtime/JSPromiseConstructor.cpp:
+        * runtime/JSPromiseDeferred.cpp:
+        * runtime/JSPromiseFunctions.cpp:
+        * runtime/JSPromisePrototype.cpp:
+        * runtime/JSPromiseReaction.cpp:
+        * runtime/JSScope.h:
+        (JSC::Register::operator=): Deleted.
+        (JSC::Register::scope): Deleted.
+        (JSC::ExecState::vm): Deleted.
+        (JSC::ExecState::lexicalGlobalObject): Deleted.
+        (JSC::ExecState::globalThisValue): Deleted.
+        * runtime/JSSetIterator.cpp:
+        * runtime/MapConstructor.cpp:
+        * runtime/MapData.cpp:
+        * runtime/MapIteratorPrototype.cpp:
+        * runtime/MapPrototype.cpp:
+        * runtime/SetConstructor.cpp:
+        * runtime/SetIteratorPrototype.cpp:
+        * runtime/SetPrototype.cpp:
+        * runtime/WeakMapConstructor.cpp:
+        * runtime/WeakMapPrototype.cpp:
+
+2014-09-08  Eva Balazsfalvi  <evab.u-szeged@partner.samsung.com>
+
+        Remove FILTERS flag
+        https://bugs.webkit.org/show_bug.cgi?id=136571
+
+        Reviewed by Darin Adler.
+
+        * Configurations/FeatureDefines.xcconfig:
+
+2014-09-08  Saam Barati  <saambarati1@gmail.com>
+
+        Merge StructureShapes that share the same prototype chain
+        https://bugs.webkit.org/show_bug.cgi?id=136549
+
+        Reviewed by Filip Pizlo.
+
+        Instead of keeping track of many discrete StructureShapes that share
+        the same prototype chain, TypeSet should merge StructureShapes that 
+        have the same prototype chain and provide a new member variable for 
+        optional structure fields. This provides a cleaner and more concise
+        interface for dealing with StructureShapes within TypeSet. Instead
+        of having many discrete shapes that are almost identical, almost 
+        identical shapes will be merged together with an interface for 
+        understanding what fields the shapes being merged together differ in.
+
+        * runtime/TypeSet.cpp:
+        (JSC::TypeSet::addTypeInformation):
+        (JSC::StructureShape::addProperty):
+        (JSC::StructureShape::toJSONString):
+        (JSC::StructureShape::inspectorRepresentation):
+        (JSC::StructureShape::hasSamePrototypeChain):
+        (JSC::StructureShape::merge):
+        * runtime/TypeSet.h:
+        * tests/typeProfiler/optional-fields.js: Added.
+        (wrapper.func):
+        (wrapper):
+
+2014-09-08  Jessie Berlin  <jberlin@apple.com>
+
+        More 32-bit Release build fixes after r173364.
+
+        * dfg/DFGSpeculativeJIT32_64.cpp:
+        (JSC::DFG::SpeculativeJIT::compile):
+
+2014-09-07  Maciej Stachowiak  <mjs@apple.com>
+
+        Fix typos in last patch to fix build.
+
+        Unreviewed build fix.
+
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::silentSavePlanForGPR):
+        (JSC::DFG::SpeculativeJIT::jumpSlowForUnwantedArrayMode):
+
+2014-09-07  Maciej Stachowiak  <mjs@apple.com>
+
+        Introduce COMPILER_QUIRK(CONSIDERS_UNREACHABLE_CODE) and use it
+        https://bugs.webkit.org/show_bug.cgi?id=136616
+
+        Reviewed by Darin Adler.
+        
+        Many compilers will analyze unrechable code paths (e.g. after an
+        unreachable code path), so sometimes they need dead code initializations.
+        But clang with suitable warnings will complain about unreachable code. So
+        use the quirk to include it conditionally.
+
+        * bytecode/CodeBlock.cpp:
+        (JSC::CodeBlock::printGetByIdOp):
+        * dfg/DFGOSRExitCompilerCommon.cpp:
+        (JSC::DFG::handleExitCounts):
+        * dfg/DFGPlan.cpp:
+        (JSC::DFG::Plan::compileInThread):
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::silentSavePlanForGPR):
+        * jsc.cpp:
+        * runtime/JSArray.cpp:
+        (JSC::JSArray::fillArgList):
+        (JSC::JSArray::copyToArguments):
+        * runtime/RegExp.cpp:
+        (JSC::RegExp::compile):
+        (JSC::RegExp::compileMatchOnly):
+
+2014-09-06  Darin Adler  <darin@apple.com>
+
+        Make updates suggested by new version of Xcode
+        https://bugs.webkit.org/show_bug.cgi?id=136603
+
+        Reviewed by Mark Rowe.
+
+        * Configurations/Base.xcconfig: Added CLANG_WARN_UNREACHABLE_CODE, COMBINE_HIDPI_IMAGES,
+        and ENABLE_STRICT_OBJC_MSGSEND as suggested by Xcode upgrade check.
+
+        * JavaScriptCore.xcodeproj/project.pbxproj: Update LastUpgradeCheck.
+
+        * dfg/DFGSpeculativeJIT.cpp:
+        (JSC::DFG::SpeculativeJIT::jumpSlowForUnwantedArrayMode): Compile out unreachable code
+        for clang, since it understands the code is unreachable.
+        * runtime/JSArray.cpp:
+        (JSC::JSArray::fillArgList): Ditto.
+        (JSC::JSArray::copyToArguments): Ditto.
+
 2014-09-05  Matt Baker  <mattbaker@apple.com>
 
         Web Inspector: breakpoint actions should work regardless of Content Security Policy

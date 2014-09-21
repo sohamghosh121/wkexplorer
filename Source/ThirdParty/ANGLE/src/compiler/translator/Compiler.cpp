@@ -239,8 +239,15 @@ bool TCompiler::compile(const char* const shaderStrings[],
         if (success && (compileOptions & SH_VARIABLES))
         {
             collectVariables(root);
-            if (compileOptions & SH_ENFORCE_PACKING_RESTRICTIONS)
+            if (compileOptions & SH_ENFORCE_PACKING_RESTRICTIONS) {
                 success = enforcePackingRestrictions();
+                if (!success) {
+                    infoSink.info.prefix(EPrefixError);
+                    infoSink.info << "too many uniforms";
+                    return false;
+                }
+            }
+
             if (success && shaderType == SH_VERTEX_SHADER &&
                 (compileOptions & SH_INIT_VARYINGS_WITHOUT_STATIC_USE))
                 initializeVaryingsWithoutStaticUse(root);
@@ -453,27 +460,7 @@ void TCompiler::collectVariables(TIntermNode* root)
 bool TCompiler::enforcePackingRestrictions()
 {
     VariablePacker packer;
-    bool success = packer.CheckVariablesWithinPackingLimits(maxUniformVectors, uniforms);
-    if (!success) {
-        infoSink.info.prefix(EPrefixError);
-        infoSink.info << "too many uniforms";
-        return false;
-    }
-
-    TVariableInfoList nonStaticallyUsedVaryings;
-
-    for (TVariableInfo info : varyings) {
-        if (!info.staticUse)
-            nonStaticallyUsedVaryings.push_back(info);
-    }
-    success = packer.CheckVariablesWithinPackingLimits(maxVaryingVectors, nonStaticallyUsedVaryings);
-
-    if (!success) {
-        infoSink.info.prefix(EPrefixError);
-        infoSink.info << "too many varyings";
-        return false;
-    }
-    return true;
+    return packer.CheckVariablesWithinPackingLimits(maxUniformVectors, uniforms);
 }
 
 void TCompiler::initializeGLPosition(TIntermNode* root)

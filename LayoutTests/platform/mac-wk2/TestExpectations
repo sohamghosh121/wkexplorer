@@ -341,10 +341,6 @@ webkit.org/b/125996 platform/mac/accessibility/search-when-element-starts-in-tab
 
 webkit.org/b/127960 [ MountainLion ] http/tests/security/cross-origin-plugin-private-browsing-toggled.html [ Pass Failure ]
 
-webkit.org/b/131349 http/tests/xmlhttprequest/access-control-preflight-credential-async.html [ Failure ]
-webkit.org/b/131349 http/tests/xmlhttprequest/cross-origin-no-authorization.html [ Failure ]
-webkit.org/b/131349 http/tests/xmlhttprequest/cross-origin-no-credential-prompt.html [ Failure ]
-
 webkit.org/b/134550 [ Mavericks ] http/tests/cache/iframe-304-crash.html [ Pass Failure ]
 
 # Subpixel wrong cliprect on WK2
@@ -639,14 +635,9 @@ http/tests/security/cross-origin-worker-indexeddb.html [ Skip ]
 # PPT: PingLoader is still in WebProcess. As a result, this test fails and also fails to delete its cookie, breaking many other cookie tests.
 [ Mavericks ] http/tests/navigation/ping-cookie.html [ Skip ]
 
-# <rdar://problem/13751647> PPT: Status text not passed over IPC
-[ Mavericks ] http/tests/xmlhttprequest/web-apps/012.html [ Failure ]
-[ Mavericks ] http/tests/xmlhttprequest/web-apps/013.html [ Failure ]
-
 # https://bugs.webkit.org/show_bug.cgi?id=133227
-plugins/snapshotting/set-plugin-size-to-tiny.html
-plugins/snapshotting/simple.html
-plugins/snapshotting/snapshot-plugin-not-quite-blocked-by-image.html
+plugins/snapshotting/autoplay-similar-to-dominant-after-delay.html
+plugins/snapshotting/set-plugin-size-to-tiny.html 
 
 ### END OF (6) Features that are not supported in WebKit2, on Mavericks
 ########################################

@@ -1330,7 +1330,11 @@ void WebPage::computeExpandAndShrinkThresholdsForHandle(const IntPoint& point, S
 {
     Frame& frame = m_page->focusController().focusedOrMainFrame();
     RefPtr<Range> currentRange = m_currentBlockSelection ? m_currentBlockSelection.get() : frame.selection().selection().toNormalizedRange();
-    ASSERT(currentRange);
+
+    // FIXME: This used to be an assertion but there appears to be some race condition under which we get a null range.
+    // Should we do other things in addition to the null check here?
+    if (!currentRange)
+        return;
 
     RefPtr<Range> expandedRange = expandedRangeFromHandle(currentRange.get(), handlePosition);
     SelectionFlags flags;
@@ -1905,8 +1909,10 @@ void WebPage::getPositionInformation(const IntPoint& point, InteractionInformati
             info.title = element->fastGetAttribute(HTMLNames::titleAttr).string();
             if (linkElement && info.title.isEmpty())
                 info.title = element->innerText();
-            if (element->renderer())
+            if (element->renderer()) {
                 info.bounds = element->renderer()->absoluteBoundingBoxRect(true);
+                info.touchCalloutEnabled = element->renderer()->style().touchCalloutEnabled();
+            }
         }
     }
 
@@ -2244,10 +2250,8 @@ void WebPage::dynamicViewportSizeUpdate(const FloatSize& minimumLayoutSize, cons
 
         HitTestResult hitTestResult = HitTestResult(unobscuredContentRectCenter);
 
-        if (RenderView* mainFrameRenderView = frameView.renderView()) {
-            HitTestRequest request(HitTestRequest::ReadOnly | HitTestRequest::Active | HitTestRequest::DisallowShadowContent);
-            mainFrameRenderView->hitTest(request, hitTestResult);
-        }
+        if (RenderView* mainFrameRenderView = frameView.renderView())
+            mainFrameRenderView->hitTest(HitTestRequest(), hitTestResult);
 
         if (Node* node = hitTestResult.innerNode()) {
             if (RenderObject* renderer = node->renderer()) {

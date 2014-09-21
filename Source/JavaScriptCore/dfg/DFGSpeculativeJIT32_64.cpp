@@ -36,7 +36,7 @@
 #include "DFGSlowPathGenerator.h"
 #include "Debugger.h"
 #include "GetterSetter.h"
-#include "JSActivation.h"
+#include "JSLexicalEnvironment.h"
 #include "JSPropertyNameEnumerator.h"
 #include "ObjectPrototype.h"
 #include "JSCInlines.h"
@@ -2205,7 +2205,9 @@ void SpeculativeJIT::compile(Node* node)
         case Array::SelectUsingPredictions:
         case Array::ForceExit:
             RELEASE_ASSERT_NOT_REACHED();
+#if COMPILER_QUIRK(CONSIDERS_UNREACHABLE_CODE)
             terminateSpeculativeExecution(InadequateCoverage, JSValueRegs(), 0);
+#endif
             break;
         case Array::Generic: {
             SpeculateCellOperand base(this, node->child1()); // Save a register, speculate cell. We'll probably be right.
@@ -2435,8 +2437,10 @@ void SpeculativeJIT::compile(Node* node)
         case Array::SelectUsingPredictions:
         case Array::ForceExit:
             RELEASE_ASSERT_NOT_REACHED();
+#if COMPILER_QUIRK(CONSIDERS_UNREACHABLE_CODE)
             terminateSpeculativeExecution(InadequateCoverage, JSValueRegs(), 0);
             alreadyHandled = true;
+#endif
             break;
         case Array::Generic: {
             ASSERT(node->op() == PutByVal || node->op() == PutByValDirect);
@@ -3534,7 +3538,7 @@ void SpeculativeJIT::compile(Node* node)
         GPRReg scopeGPR = scope.gpr();
         GPRReg resultGPR = result.gpr();
 
-        m_jit.loadPtr(JITCompiler::Address(scopeGPR, JSVariableObject::offsetOfRegisters()), resultGPR);
+        m_jit.loadPtr(JITCompiler::Address(scopeGPR, JSEnvironmentRecord::offsetOfRegisters()), resultGPR);
         storageResult(resultGPR, node);
         break;
     }
@@ -3790,7 +3794,7 @@ void SpeculativeJIT::compile(Node* node)
         GPRReg resultTagGPR = resultTag.gpr();
         GPRReg resultPayloadGPR = resultPayload.gpr();
         
-        StorageAccessData& storageAccessData = m_jit.graph().m_storageAccessData[node->storageAccessDataIndex()];
+        StorageAccessData& storageAccessData = node->storageAccessData();
         
         m_jit.load32(JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset) + OBJECT_OFFSETOF(EncodedValueDescriptor, asBits.payload)), resultPayloadGPR);
         m_jit.load32(JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset) + OBJECT_OFFSETOF(EncodedValueDescriptor, asBits.tag)), resultTagGPR);
@@ -3806,7 +3810,7 @@ void SpeculativeJIT::compile(Node* node)
         GPRReg storageGPR = storage.gpr();
         GPRReg resultPayloadGPR = resultPayload.gpr();
         
-        StorageAccessData& storageAccessData = m_jit.graph().m_storageAccessData[node->storageAccessDataIndex()];
+        StorageAccessData& storageAccessData = node->storageAccessData();
         
         m_jit.load32(JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset) + OBJECT_OFFSETOF(EncodedValueDescriptor, asBits.payload)), resultPayloadGPR);
         
@@ -3850,7 +3854,7 @@ void SpeculativeJIT::compile(Node* node)
 
         speculate(node, node->child2());
 
-        StorageAccessData& storageAccessData = m_jit.graph().m_storageAccessData[node->storageAccessDataIndex()];
+        StorageAccessData& storageAccessData = node->storageAccessData();
         
         m_jit.storePtr(valueTagGPR, JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset) + OBJECT_OFFSETOF(EncodedValueDescriptor, asBits.tag)));
         m_jit.storePtr(valuePayloadGPR, JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset) + OBJECT_OFFSETOF(EncodedValueDescriptor, asBits.payload)));
@@ -4248,7 +4252,7 @@ void SpeculativeJIT::compile(Node* node)
         JITCompiler::Jump notCreated = m_jit.branch32(JITCompiler::Equal, activationValueTagGPR, TrustedImm32(JSValue::EmptyValueTag));
 
         SymbolTable* symbolTable = m_jit.symbolTableFor(node->origin.semantic);
-        int registersOffset = JSActivation::registersOffset(symbolTable);
+        int registersOffset = JSLexicalEnvironment::registersOffset(symbolTable);
 
         int bytecodeCaptureStart = symbolTable->captureStart();
         int machineCaptureStart = m_jit.graph().m_machineCaptureStart;
@@ -4269,7 +4273,7 @@ void SpeculativeJIT::compile(Node* node)
                     activationValuePayloadGPR, registersOffset + (bytecodeCaptureStart - i) * sizeof(Register) + OBJECT_OFFSETOF(EncodedValueDescriptor, asBits.payload)));
         }
         m_jit.addPtr(TrustedImm32(registersOffset), activationValuePayloadGPR, scratchGPR);
-        m_jit.storePtr(scratchGPR, JITCompiler::Address(activationValuePayloadGPR, JSActivation::offsetOfRegisters()));
+        m_jit.storePtr(scratchGPR, JITCompiler::Address(activationValuePayloadGPR, JSLexicalEnvironment::offsetOfRegisters()));
         
         notCreated.link(&m_jit);
         noResult(node);

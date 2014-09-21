@@ -158,6 +158,7 @@
 #include <wtf/CurrentTime.h>
 #include <wtf/TemporaryChange.h>
 #include <wtf/text/StringBuffer.h>
+#include <yarr/RegularExpression.h>
 
 #if ENABLE(SHARED_WORKERS)
 #include "SharedWorkerRepository.h"
@@ -804,16 +805,16 @@ void Document::resetActiveLinkColor()
     m_activeLinkColor.setNamedColor("red");
 }
 
-DOMImplementation* Document::implementation()
+DOMImplementation& Document::implementation()
 {
     if (!m_implementation)
         m_implementation = std::make_unique<DOMImplementation>(*this);
-    return m_implementation.get();
+    return *m_implementation;
 }
 
 bool Document::hasManifest() const
 {
-    return documentElement() && documentElement()->hasTagName(htmlTag) && documentElement()->hasAttribute(manifestAttr);
+    return documentElement() && documentElement()->hasTagName(htmlTag) && documentElement()->fastHasAttribute(manifestAttr);
 }
 
 DocumentType* Document::doctype() const
@@ -1121,17 +1122,17 @@ PassRefPtr<DOMNamedFlowCollection> Document::webkitGetNamedFlows()
 
     updateStyleIfNeeded();
 
-    return namedFlows()->createCSSOMSnapshot();
+    return namedFlows().createCSSOMSnapshot();
 }
 
 #endif
 
-NamedFlowCollection* Document::namedFlows()
+NamedFlowCollection& Document::namedFlows()
 {
     if (!m_namedFlows)
         m_namedFlows = NamedFlowCollection::create(this);
 
-    return m_namedFlows.get();
+    return *m_namedFlows;
 }
 
 PassRefPtr<Element> Document::createElementNS(const String& namespaceURI, const String& qualifiedName, ExceptionCode& ec)
@@ -1315,7 +1316,7 @@ void Document::setContentLanguage(const String& language)
 
 void Document::setXMLVersion(const String& version, ExceptionCode& ec)
 {
-    if (!implementation()->hasFeature("XML", String())) {
+    if (!implementation().hasFeature("XML", String())) {
         ec = NOT_SUPPORTED_ERR;
         return;
     }
@@ -1330,7 +1331,7 @@ void Document::setXMLVersion(const String& version, ExceptionCode& ec)
 
 void Document::setXMLStandalone(bool standalone, ExceptionCode& ec)
 {
-    if (!implementation()->hasFeature("XML", String())) {
+    if (!implementation().hasFeature("XML", String())) {
         ec = NOT_SUPPORTED_ERR;
         return;
     }
@@ -1395,7 +1396,7 @@ PassRefPtr<Range> Document::caretRangeFromPoint(int x, int y)
 
     Node* shadowAncestorNode = ancestorInThisScope(node);
     if (shadowAncestorNode != node) {
-        unsigned offset = shadowAncestorNode->nodeIndex();
+        unsigned offset = shadowAncestorNode->computeNodeIndex();
         ContainerNode* container = shadowAncestorNode->parentNode();
         return Range::create(*this, container, offset, container, offset);
     }
@@ -1580,11 +1581,11 @@ bool Document::hidden() const
 }
 
 #if ENABLE(CSP_NEXT)
-DOMSecurityPolicy* Document::securityPolicy()
+DOMSecurityPolicy& Document::securityPolicy()
 {
     if (!m_domSecurityPolicy)
         m_domSecurityPolicy = DOMSecurityPolicy::create(this);
-    return m_domSecurityPolicy.get();
+    return *m_domSecurityPolicy;
 }
 #endif
 
@@ -1808,8 +1809,8 @@ void Document::updateLayout()
 
     RenderView::RepaintRegionAccumulator repaintRegionAccumulator(renderView());
 
-    if (Element* oe = ownerElement())
-        oe->document().updateLayout();
+    if (HTMLFrameOwnerElement* owner = ownerElement())
+        owner->document().updateLayout();
 
     updateStyleIfNeeded();
 
@@ -1851,7 +1852,7 @@ void Document::updateLayoutIgnorePendingStylesheets(Document::RunPostLayoutTasks
 
     updateLayout();
 
-    if (runPostLayoutTasks == RunPostLayoutTasksSynchronously && view())
+    if (runPostLayoutTasks == RunPostLayoutTasks::Synchronously && view())
         view()->flushAnyPendingPostLayoutTasks();
 
     m_ignorePendingStylesheets = oldIgnore;
@@ -3171,11 +3172,11 @@ void Document::cloneDataFromDocument(const Document& other)
     setDecoder(other.decoder());
 }
 
-StyleSheetList* Document::styleSheets()
+StyleSheetList& Document::styleSheets()
 {
     if (!m_styleSheetList)
         m_styleSheetList = StyleSheetList::create(this);
-    return m_styleSheetList.get();
+    return *m_styleSheetList;
 }
 
 String Document::preferredStylesheetSet() const
@@ -4388,7 +4389,7 @@ Document& Document::topDocument() const
     }
 
     Document* document = const_cast<Document*>(this);
-    while (Element* element = document->ownerElement())
+    while (HTMLFrameOwnerElement* element = document->ownerElement())
         document = &element->document();
     return *document;
 }
@@ -5331,6 +5332,15 @@ static void unwrapFullScreenRenderer(RenderFullScreen* fullScreenRenderer, Eleme
         fullScreenElement->parentNode()->setNeedsStyleRecalc(ReconstructRenderTree);
 }
 
+static bool hostIsYouTube(const String& host)
+{
+    // Match .youtube.com, youtube.com, youtube.co.uk, and all two-letter country codes.
+    static NeverDestroyed<JSC::Yarr::RegularExpression> youtubePattern("(^|\\.)youtube.(com|co.uk|[a-z]{2})$", TextCaseInsensitive);
+    ASSERT(youtubePattern.get().isValid());
+
+    return youtubePattern.get().match(host);
+}
+
 void Document::webkitWillEnterFullScreenForElement(Element* element)
 {
     if (!hasLivingRenderTree() || inPageCache())
@@ -5368,8 +5378,11 @@ void Document::webkitWillEnterFullScreenForElement(Element* element)
         RenderFullScreen::wrapRenderer(renderer, renderer ? renderer->parent() : nullptr, *this);
 
     m_fullScreenElement->setContainsFullScreenElementOnAncestorsCrossingFrameBoundaries(true);
-    
+
     recalcStyle(Style::Force);
+
+    if (settings() && settings()->needsSiteSpecificQuirks() && hostIsYouTube(url().host()))
+        fullScreenChangeDelayTimerFired(m_fullScreenChangeDelayTimer);
 }
 
 void Document::webkitDidEnterFullScreenForElement(Element*)
@@ -5382,7 +5395,8 @@ void Document::webkitDidEnterFullScreenForElement(Element*)
 
     m_fullScreenElement->didBecomeFullscreenElement();
 
-    m_fullScreenChangeDelayTimer.startOneShot(0);
+    if (!settings() || !settings()->needsSiteSpecificQuirks() || !hostIsYouTube(url().host()))
+        m_fullScreenChangeDelayTimer.startOneShot(0);
 }
 
 void Document::webkitWillExitFullScreenForElement(Element*)
@@ -5418,9 +5432,16 @@ void Document::webkitDidExitFullScreenForElement(Element*)
     // the exiting document.
     bool eventTargetQueuesEmpty = m_fullScreenChangeEventTargetQueue.isEmpty() && m_fullScreenErrorEventTargetQueue.isEmpty();
     Document& exitingDocument = eventTargetQueuesEmpty ? topDocument() : *this;
-    exitingDocument.m_fullScreenChangeDelayTimer.startOneShot(0);
+
+    // FIXME(136605): Remove this quirk once YouTube moves to relative widths and heights for
+    // fullscreen mode.
+    if (settings() && settings()->needsSiteSpecificQuirks() && hostIsYouTube(url().host()))
+        exitingDocument.fullScreenChangeDelayTimerFired(exitingDocument.m_fullScreenChangeDelayTimer);
+    else
+        exitingDocument.m_fullScreenChangeDelayTimer.startOneShot(0);
+
 }
-    
+
 void Document::setFullScreenRenderer(RenderFullScreen* renderer)
 {
     if (renderer == m_fullScreenRenderer)

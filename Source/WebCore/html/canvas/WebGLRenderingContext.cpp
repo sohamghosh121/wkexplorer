@@ -431,9 +431,6 @@ std::unique_ptr<WebGLRenderingContext> WebGLRenderingContext::create(HTMLCanvasE
     attributes.shareResources = false;
     attributes.preferDiscreteGPU = true;
 
-    if (frame->settings().multithreadedWebGLEnabled())
-        attributes.multithreaded = true;
-
     if (frame->settings().forceSoftwareWebGLRendering())
         attributes.forceSoftwareRenderer = true;
 
@@ -3453,7 +3450,7 @@ void WebGLRenderingContext::linkProgram(WebGLProgram* program, ExceptionCode& ec
     if (!isGLES2Compliant()) {
         WebGLShader* vertexShader = program->getAttachedShader(GraphicsContext3D::VERTEX_SHADER);
         WebGLShader* fragmentShader = program->getAttachedShader(GraphicsContext3D::FRAGMENT_SHADER);
-        if (!vertexShader || !vertexShader->isValid() || !fragmentShader || !fragmentShader->isValid() || !m_context->precisionsMatch(objectOrZero(vertexShader), objectOrZero(fragmentShader))) {
+        if (!vertexShader || !vertexShader->isValid() || !fragmentShader || !fragmentShader->isValid() || !m_context->precisionsMatch(objectOrZero(vertexShader), objectOrZero(fragmentShader)) || !m_context->checkVaryingsPacking(objectOrZero(vertexShader), objectOrZero(fragmentShader))) {
             program->setLinkStatus(false);
             return;
         }

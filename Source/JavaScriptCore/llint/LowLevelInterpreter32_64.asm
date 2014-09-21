@@ -176,9 +176,8 @@ macro doVMEntry(makeCall)
         const temp4 = t4 # Same as temp2
     elsif MIPS
         const entry = a0
-        const vmTopCallFrame = a1
+        const vm = a1
         const protoCallFrame = a2
-        const topOfStack = a3
 
         const temp1 = t3
         const temp2 = t5
@@ -388,7 +387,7 @@ macro makeHostFunctionCall(entry, temp1, temp2)
 end
 
 _handleUncaughtException:
-    loadp ScopeChain + PayloadOffset[cfr], t3
+    loadp Callee + PayloadOffset[cfr], t3
     andp MarkedBlockMask, t3
     loadp MarkedBlock::m_weakSet + WeakSet::m_vm[t3], t3
     loadp VM::callFrameForThrow[t3], cfr
@@ -690,7 +689,7 @@ macro functionArityCheck(doneLabel, slowPath)
 end
 
 macro branchIfException(label)
-    loadp ScopeChain[cfr], t3
+    loadp Callee[cfr], t3
     andp MarkedBlockMask, t3
     loadp MarkedBlock::m_weakSet + WeakSet::m_vm[t3], t3
     bieq VM::m_exception + TagOffset[t3], EmptyValueTag, .noException
@@ -720,10 +719,10 @@ _llint_op_enter:
     dispatch(1)
 
 
-_llint_op_create_activation:
+_llint_op_create_lexical_environment:
     traceExecution()
     loadi 4[PC], t0
-    callSlowPath(_llint_slow_path_create_activation)
+    callSlowPath(_llint_slow_path_create_lexical_environment)
     dispatch(2)
 
 
@@ -1972,11 +1971,11 @@ macro doCall(slowPath)
 end
 
 
-_llint_op_tear_off_activation:
+_llint_op_tear_off_lexical_environment:
     traceExecution()
     loadi 4[PC], t0
     bieq TagOffset[cfr, t0, 8], EmptyValueTag, .opTearOffActivationNotCreated
-    callSlowPath(_llint_slow_path_tear_off_activation)
+    callSlowPath(_llint_slow_path_tear_off_lexical_environment)
 .opTearOffActivationNotCreated:
     dispatch(2)
 
@@ -2037,7 +2036,7 @@ _llint_op_catch:
     # the interpreter's throw trampoline (see _llint_throw_trampoline).
     # The throwing code must have known that we were throwing to the interpreter,
     # and have set VM::targetInterpreterPCForThrow.
-    loadp ScopeChain + PayloadOffset[cfr], t3
+    loadp Callee + PayloadOffset[cfr], t3
     andp MarkedBlockMask, t3
     loadp MarkedBlock::m_weakSet + WeakSet::m_vm[t3], t3
     loadp VM::callFrameForThrow[t3], cfr
@@ -2071,7 +2070,7 @@ macro getDeBruijnScope(deBruijinIndexOperand, scopeCheck)
     bineq CodeBlock::m_codeType[t1], FunctionCode, .loop
     btbz CodeBlock::m_needsActivation[t1], .loop
 
-    loadi CodeBlock::m_activationRegister[t1], t1
+    loadi CodeBlock::m_lexicalEnvironmentRegister[t1], t1
 
     # Need to conditionally skip over one scope.
     bieq TagOffset[cfr, t1, 8], EmptyValueTag, .noActivation
@@ -2125,6 +2124,7 @@ macro nativeCallTrampoline(executableOffsetToFunction)
     loadi ScopeChain + PayloadOffset[t0], t1
     storei CellTag, ScopeChain + TagOffset[cfr]
     storei t1, ScopeChain + PayloadOffset[cfr]
+    loadi Callee + PayloadOffset[t0], t1
     if X86 or X86_WIN
         subp 8, sp # align stack pointer
         andp MarkedBlockMask, t1
@@ -2136,13 +2136,13 @@ macro nativeCallTrampoline(executableOffsetToFunction)
         loadp JSFunction::m_executable[t1], t1
         checkStackPointerAlignment(t3, 0xdead0001)
         call executableOffsetToFunction[t1]
-        loadp ScopeChain[cfr], t3
+        loadp Callee[cfr], t3
         andp MarkedBlockMask, t3
         loadp MarkedBlock::m_weakSet + WeakSet::m_vm[t3], t3
         addp 8, sp
     elsif ARM or ARMv7 or ARMv7_TRADITIONAL or C_LOOP or MIPS or SH4
         subp 8, sp # align stack pointer
-        # t1 already contains the ScopeChain.
+        # t1 already contains the Callee.
         andp MarkedBlockMask, t1
         loadp MarkedBlock::m_weakSet + WeakSet::m_vm[t1], t1
         storep cfr, VM::topCallFrame[t1]
@@ -2159,7 +2159,7 @@ macro nativeCallTrampoline(executableOffsetToFunction)
         else
             call executableOffsetToFunction[t1]
         end
-        loadp ScopeChain[cfr], t3
+        loadp Callee[cfr], t3
         andp MarkedBlockMask, t3
         loadp MarkedBlock::m_weakSet + WeakSet::m_vm[t3], t3
         addp 8, sp
@@ -2281,7 +2281,7 @@ macro getGlobalVar()
 end
 
 macro getClosureVar()
-    loadp JSVariableObject::m_registers[t0], t0
+    loadp JSEnvironmentRecord::m_registers[t0], t0
     loadisFromInstruction(6, t3)
     loadp TagOffset[t0, t3, 8], t1
     loadp PayloadOffset[t0, t3, 8], t2
@@ -2358,7 +2358,7 @@ end
 macro putClosureVar()
     loadisFromInstruction(3, t1)
     loadConstantOrVariable(t1, t2, t3)
-    loadp JSVariableObject::m_registers[t0], t0
+    loadp JSEnvironmentRecord::m_registers[t0], t0
     loadisFromInstruction(6, t1)
     storei t2, TagOffset[t0, t1, 8]
     storei t3, PayloadOffset[t0, t1, 8]

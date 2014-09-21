@@ -75,7 +75,7 @@ RenderWidget* HTMLEmbedElement::renderWidgetForJSBindings() const
         // Needs to load the plugin immediatedly because this function is called
         // when JavaScript code accesses the plugin.
         // FIXME: <rdar://16893708> Check if dispatching events here is safe.
-        document().updateLayoutIgnorePendingStylesheets(Document::RunPostLayoutTasksSynchronously);
+        document().updateLayoutIgnorePendingStylesheets(Document::RunPostLayoutTasks::Synchronously);
     }
     return findWidgetRenderer(this);
 }
@@ -214,14 +214,14 @@ bool HTMLEmbedElement::isURLAttribute(const Attribute& attribute) const
 
 const AtomicString& HTMLEmbedElement::imageSourceURL() const
 {
-    return getAttribute(srcAttr);
+    return fastGetAttribute(srcAttr);
 }
 
 void HTMLEmbedElement::addSubresourceAttributeURLs(ListHashSet<URL>& urls) const
 {
     HTMLPlugInImageElement::addSubresourceAttributeURLs(urls);
 
-    addSubresourceURL(urls, document().completeURL(getAttribute(srcAttr)));
+    addSubresourceURL(urls, document().completeURL(fastGetAttribute(srcAttr)));
 }
 
 }

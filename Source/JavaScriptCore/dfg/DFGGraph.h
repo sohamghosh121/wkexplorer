@@ -55,11 +55,6 @@ class ExecState;
 
 namespace DFG {
 
-struct StorageAccessData {
-    PropertyOffset offset;
-    unsigned identifierNumber;
-};
-
 struct InlineVariableData {
     InlineCallFrame* inlineCallFrame;
     unsigned argumentPositionStart;
@@ -570,6 +565,8 @@ public:
     void determineReachability();
     void resetReachability();
     
+    void computeRefCounts();
+    
     unsigned varArgNumChildren(Node* node)
     {
         ASSERT(node->flags() & NodeHasVarArgs);
@@ -676,8 +673,8 @@ public:
     void clearReplacements();
     void initializeNodeOwners();
     
-    void getBlocksInPreOrder(Vector<BasicBlock*>& result);
-    void getBlocksInPostOrder(Vector<BasicBlock*>& result);
+    BlockList blocksInPreOrder();
+    BlockList blocksInPostOrder();
     
     Profiler::Compilation* compilation() { return m_plan.compilation.get(); }
     
@@ -698,7 +695,7 @@ public:
     JSValue tryGetConstantProperty(JSValue base, const StructureAbstractValue&, PropertyOffset);
     JSValue tryGetConstantProperty(const AbstractValue&, PropertyOffset);
     
-    JSActivation* tryGetActivation(Node*);
+    JSLexicalEnvironment* tryGetActivation(Node*);
     WriteBarrierBase<Unknown>* tryGetRegisters(Node*);
     
     JSArrayBufferView* tryGetFoldableView(Node*);
@@ -728,7 +725,7 @@ public:
     HashMap<EncodedJSValue, FrozenValue*, EncodedJSValueHash, EncodedJSValueHashTraits> m_frozenValueMap;
     Bag<FrozenValue> m_frozenValues;
     
-    Vector<StorageAccessData> m_storageAccessData;
+    Bag<StorageAccessData> m_storageAccessData;
     Vector<Node*, 8> m_arguments;
     SegmentedVector<VariableAccessData, 16> m_variableAccessData;
     SegmentedVector<ArgumentPosition, 8> m_argumentPositions;

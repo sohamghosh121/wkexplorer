@@ -2284,7 +2284,7 @@ static bool needsSelfRetainWhileLoadingQuirk()
 
 #if ENABLE(RUBBER_BANDING)
     // FIXME: https://bugs.webkit.org/show_bug.cgi?id=136131
-    settings.setRubberBandingForOverflowScrollEnabled(false);
+    settings.setRubberBandingForSubScrollableRegionsEnabled(false);
 #endif
 
 #if PLATFORM(IOS)
@@ -2333,9 +2333,6 @@ static bool needsSelfRetainWhileLoadingQuirk()
     settings.setShowsURLsInToolTips([preferences showsURLsInToolTips]);
     settings.setShowsToolTipOverTruncatedText([preferences showsToolTipOverTruncatedText]);
     settings.setQTKitEnabled([preferences isQTKitEnabled]);
-
-    // FIXME: Should we enable this following <rdar://problem/15290404>?
-    settings.setMultithreadedWebGLEnabled([preferences multithreadedWebGLEnabled]);
 #endif // PLATFORM(MAC)
 
 #if ENABLE(SQL_DATABASE)

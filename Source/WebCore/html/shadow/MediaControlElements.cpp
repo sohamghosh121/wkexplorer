@@ -33,6 +33,7 @@
 #include "MediaControlElements.h"
 
 #include "DOMTokenList.h"
+#include "ElementChildIterator.h"
 #include "EventHandler.h"
 #include "EventNames.h"
 #include "ExceptionCodePlaceholder.h"
@@ -168,7 +169,7 @@ void MediaControlPanelElement::setPosition(const LayoutPoint& position)
     setInlineStyleProperty(CSSPropertyMarginLeft, 0.0, CSSPrimitiveValue::CSS_PX);
     setInlineStyleProperty(CSSPropertyMarginTop, 0.0, CSSPrimitiveValue::CSS_PX);
 
-    classList()->add("dragged", IGNORE_EXCEPTION);
+    classList().add("dragged", IGNORE_EXCEPTION);
 }
 
 void MediaControlPanelElement::resetPosition()
@@ -178,7 +179,7 @@ void MediaControlPanelElement::resetPosition()
     removeInlineStyleProperty(CSSPropertyMarginLeft);
     removeInlineStyleProperty(CSSPropertyMarginTop);
 
-    classList()->remove("dragged", IGNORE_EXCEPTION);
+    classList().remove("dragged", IGNORE_EXCEPTION);
 
     m_cumulativeDragOffset.setX(0);
     m_cumulativeDragOffset.setY(0);
@@ -296,20 +297,16 @@ PassRefPtr<MediaControlTimelineContainerElement> MediaControlTimelineContainerEl
 
 void MediaControlTimelineContainerElement::setTimeDisplaysHidden(bool hidden)
 {
-    for (unsigned i = 0; i < childNodeCount(); ++i) {
-        Node* child = childNode(i);
-        if (!child || !child->isElementNode())
-            continue;
-        Element* element = toElement(child);
-        if (element->shadowPseudoId() != getMediaControlTimeRemainingDisplayElementShadowPseudoId()
-            && element->shadowPseudoId() != getMediaControlCurrentTimeDisplayElementShadowPseudoId())
+    for (auto& element : childrenOfType<Element>(*this)) {
+        if (element.shadowPseudoId() != getMediaControlTimeRemainingDisplayElementShadowPseudoId()
+            && element.shadowPseudoId() != getMediaControlCurrentTimeDisplayElementShadowPseudoId())
             continue;
 
-        MediaControlTimeDisplayElement* timeDisplay = static_cast<MediaControlTimeDisplayElement*>(element);
+        MediaControlTimeDisplayElement& timeDisplay = static_cast<MediaControlTimeDisplayElement&>(element);
         if (hidden)
-            timeDisplay->hide();
+            timeDisplay.hide();
         else
-            timeDisplay->show();
+            timeDisplay.show();
     }
 }
 
@@ -767,24 +764,24 @@ void MediaControlClosedCaptionsTrackListElement::updateDisplay()
 
         if (textTrack == TextTrack::captionMenuAutomaticItem()) {
             if (displayMode == CaptionUserPreferences::Automatic)
-                trackItem->classList()->add(selectedClassValue, ASSERT_NO_EXCEPTION);
+                trackItem->classList().add(selectedClassValue, ASSERT_NO_EXCEPTION);
             else
-                trackItem->classList()->remove(selectedClassValue, ASSERT_NO_EXCEPTION);
+                trackItem->classList().remove(selectedClassValue, ASSERT_NO_EXCEPTION);
             continue;
         }
 
         if (displayMode != CaptionUserPreferences::Automatic && textTrack->mode() == TextTrack::showingKeyword()) {
             trackMenuItemSelected = true;
-            trackItem->classList()->add(selectedClassValue, ASSERT_NO_EXCEPTION);
+            trackItem->classList().add(selectedClassValue, ASSERT_NO_EXCEPTION);
         } else
-            trackItem->classList()->remove(selectedClassValue, ASSERT_NO_EXCEPTION);
+            trackItem->classList().remove(selectedClassValue, ASSERT_NO_EXCEPTION);
     }
 
     if (offMenuItem) {
         if (displayMode == CaptionUserPreferences::ForcedOnly && !trackMenuItemSelected)
-            offMenuItem->classList()->add(selectedClassValue, ASSERT_NO_EXCEPTION);
+            offMenuItem->classList().add(selectedClassValue, ASSERT_NO_EXCEPTION);
         else
-            offMenuItem->classList()->remove(selectedClassValue, ASSERT_NO_EXCEPTION);
+            offMenuItem->classList().remove(selectedClassValue, ASSERT_NO_EXCEPTION);
     }
 #endif
 }
@@ -1152,7 +1149,9 @@ void MediaControlTextTrackContainerElement::updateDisplay()
     // we wish to render (e.g., we are adding another cue in a set of roll-up
     // cues), remove all the existing CSS boxes representing the cues and re-add
     // them so that the new cue is at the bottom.
-    if (childNodeCount() < activeCues.size())
+    // FIXME: Calling countChildNodes() here is inefficient. We don't need to
+    // traverse all children just to check if there are less children than cues.
+    if (countChildNodes() < activeCues.size())
         removeChildren();
 
     // Sort the active cues for the appropriate display order. For example, for roll-up

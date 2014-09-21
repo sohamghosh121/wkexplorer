@@ -38,6 +38,7 @@ template<typename T> class Array;
 
 namespace Runtime {
 class StructureDescription;
+class TypeSet;
 }
 
 }
@@ -75,15 +76,20 @@ public:
     void setConstructorName(String name) { m_constructorName = (name.isEmpty() ? "Object" : name); }
     String constructorName() { return m_constructorName; }
     void setProto(PassRefPtr<StructureShape> shape) { m_proto = shape; }
+    void enterDictionaryMode();
 
 private:
     static String leastCommonAncestor(const Vector<RefPtr<StructureShape>>);
+    static PassRefPtr<StructureShape> merge(const PassRefPtr<StructureShape>, const PassRefPtr<StructureShape>);
+    bool hasSamePrototypeChain(PassRefPtr<StructureShape>);
 
-    Vector<RefPtr<StringImpl>> m_fields;
+    HashSet<RefPtr<StringImpl>> m_fields;
+    HashSet<RefPtr<StringImpl>> m_optionalFields;
     RefPtr<StructureShape> m_proto;
     std::unique_ptr<String> m_propertyHash;
     String m_constructorName;
     bool m_final;
+    bool m_isInDictionaryMode;
 };
 
 class TypeSet : public RefCounted<TypeSet> {
@@ -99,13 +105,16 @@ public:
     PassRefPtr<Inspector::Protocol::Array<String>> allPrimitiveTypeNames() const;
     PassRefPtr<Inspector::Protocol::Array<Inspector::Protocol::Runtime::StructureDescription>> allStructureRepresentations() const;
     String toJSONString() const;
+    bool isOverflown() const { return m_isOverflown; }
+    String leastCommonAncestor() const;
+    PassRefPtr<Inspector::Protocol::Runtime::TypeSet> inspectorTypeSet() const;
 
 private:
-    String leastCommonAncestor() const;
     void dumpSeenTypes();
     bool doesTypeConformTo(uint32_t test) const;
 
     uint32_t m_seenTypes;
+    bool m_isOverflown;
     Vector<RefPtr<StructureShape>> m_structureHistory;
     HashSet<StructureID> m_structureIDCache;
 };

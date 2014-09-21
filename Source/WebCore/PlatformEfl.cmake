@@ -185,9 +185,7 @@ list(APPEND WebCore_SOURCES
 
     platform/graphics/texmap/coordinated/AreaAllocator.cpp
     platform/graphics/texmap/coordinated/CompositingCoordinator.cpp
-    platform/graphics/texmap/coordinated/CoordinatedBackingStore.cpp
     platform/graphics/texmap/coordinated/CoordinatedGraphicsLayer.cpp
-    platform/graphics/texmap/coordinated/CoordinatedGraphicsScene.cpp
     platform/graphics/texmap/coordinated/CoordinatedImageBacking.cpp
     platform/graphics/texmap/coordinated/CoordinatedSurface.cpp
     platform/graphics/texmap/coordinated/CoordinatedTile.cpp
@@ -278,12 +276,12 @@ if (ENABLE_GAMEPAD_DEPRECATED)
 endif ()
 
 list(APPEND WebCore_USER_AGENT_STYLE_SHEETS
-    ${WEBCORE_DIR}/Modules/mediacontrols/mediaControlsApple.css
+    ${WEBCORE_DIR}/Modules/mediacontrols/mediaControlsBase.css
 )
 
 set(WebCore_USER_AGENT_SCRIPTS
     ${WEBCORE_DIR}/English.lproj/mediaControlsLocalizedStrings.js
-    ${WEBCORE_DIR}/Modules/mediacontrols/mediaControlsApple.js
+    ${WEBCORE_DIR}/Modules/mediacontrols/mediaControlsBase.js
 )
 
 set(WebCore_USER_AGENT_SCRIPTS_DEPENDENCIES ${WEBCORE_DIR}/platform/efl/RenderThemeEfl.cpp)

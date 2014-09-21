@@ -192,6 +192,7 @@ Page::Page(PageClients& pageClients)
 #endif
     , m_alternativeTextClient(pageClients.alternativeTextClient)
     , m_scriptedAnimationsSuspended(false)
+    , m_pageThrottler(*this, m_viewState)
     , m_consoleClient(std::make_unique<PageConsoleClient>(*this))
 #if ENABLE(REMOTE_INSPECTOR)
     , m_inspectorDebuggable(std::make_unique<PageDebuggable>(*this))
@@ -1207,10 +1208,9 @@ void Page::resumeAnimatingImages()
         view->resumeVisibleImageAnimationsIncludingSubframes();
 }
 
-void Page::createPageThrottler()
+void Page::enablePageThrottler()
 {
-    ASSERT(!m_pageThrottler);
-    m_pageThrottler = std::make_unique<PageThrottler>(*this, m_viewState);
+    m_pageThrottler.createUserActivity();
 }
 
 void Page::setViewState(ViewState::Flags viewState)
@@ -1223,8 +1223,7 @@ void Page::setViewState(ViewState::Flags viewState)
 
     m_viewState = viewState;
     m_focusController->setViewState(viewState);
-    if (m_pageThrottler)
-        m_pageThrottler->setViewState(viewState);
+    m_pageThrottler.setViewState(viewState);
 
     if (changed & ViewState::IsVisible)
         setIsVisibleInternal(viewState & ViewState::IsVisible);
@@ -1253,11 +1252,6 @@ void Page::setIsVisibleInternal(bool isVisible)
     if (isVisible) {
         m_isPrerender = false;
 
-        for (Frame* frame = &mainFrame(); frame; frame = frame->tree().traverseNext()) {
-            if (FrameView* frameView = frame->view())
-                frameView->didMoveOnscreen();
-        }
-
         resumeScriptedAnimations();
 
         if (FrameView* view = mainFrame().view())
@@ -1279,11 +1273,6 @@ void Page::setIsVisibleInternal(bool isVisible)
     if (!isVisible) {
         if (m_settings->hiddenPageCSSAnimationSuspensionEnabled())
             mainFrame().animation().suspendAnimations();
-
-        for (Frame* frame = &mainFrame(); frame; frame = frame->tree().traverseNext()) {
-            if (FrameView* frameView = frame->view())
-                frameView->willMoveOffscreen();
-        }
 
         suspendScriptedAnimations();
 

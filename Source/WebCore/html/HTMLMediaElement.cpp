@@ -1812,11 +1812,6 @@ void HTMLMediaElement::cancelPendingEventsAndCallbacks()
         source.cancelPendingErrorEvent();
 }
 
-Document* HTMLMediaElement::mediaPlayerOwningDocument()
-{
-    return &document();
-}
-
 void HTMLMediaElement::mediaPlayerNetworkStateChanged(MediaPlayer*)
 {
     beginProcessingMediaPlayerCallback();
@@ -4527,8 +4522,8 @@ void HTMLMediaElement::updatePlayState()
 
         if (hasMediaControls())
             mediaControls()->playbackStarted();
-        if (document().page() && document().page()->pageThrottler())
-            m_activityToken = document().page()->pageThrottler()->mediaActivityToken();
+        if (document().page())
+            m_activityToken = document().page()->pageThrottler().mediaActivityToken();
 
         startPlaybackProgressTimer();
         m_playing = true;
@@ -5003,19 +4998,21 @@ bool HTMLMediaElement::closedCaptionsVisible() const
 }
 
 #if ENABLE(VIDEO_TRACK)
+
 void HTMLMediaElement::updateTextTrackDisplay()
 {
 #if ENABLE(MEDIA_CONTROLS_SCRIPT)
     ensureUserAgentShadowRoot();
     ASSERT(m_mediaControlsHost);
     m_mediaControlsHost->updateTextTrackContainer();
-    return;
-#endif
+#else
     if (!hasMediaControls() && !createMediaControls())
         return;
     
     mediaControls()->updateTextTrackDisplay();
+#endif
 }
+
 #endif
 
 void HTMLMediaElement::setClosedCaptionsVisible(bool closedCaptionVisible)
@@ -5196,9 +5193,7 @@ void HTMLMediaElement::configureMediaControls()
         return;
 
     ensureUserAgentShadowRoot();
-    return;
-#endif
-
+#else
     if (!controls() || !inDocument()) {
         if (hasMediaControls())
             mediaControls()->hide();
@@ -5209,6 +5204,7 @@ void HTMLMediaElement::configureMediaControls()
         return;
 
     mediaControls()->show();
+#endif
 }
 
 #if ENABLE(VIDEO_TRACK)
@@ -5242,9 +5238,7 @@ void HTMLMediaElement::configureTextTrackDisplay(TextTrackVisibilityCheckType ch
         return;
 
     ensureUserAgentShadowRoot();
-    return;
-#endif
-
+#else
     if (!m_haveVisibleTextTrack && !hasMediaControls())
         return;
     if (!hasMediaControls() && !createMediaControls())
@@ -5256,6 +5250,7 @@ void HTMLMediaElement::configureTextTrackDisplay(TextTrackVisibilityCheckType ch
         updateTextTrackDisplay();
         updateActiveTextTrackCues(currentMediaTime());
     }
+#endif
 }
 
 void HTMLMediaElement::captionPreferencesChanged()
@@ -5663,19 +5658,9 @@ bool HTMLMediaElement::mediaPlayerIsLooping() const
     return loop();
 }
 
-HostWindow* HTMLMediaElement::mediaPlayerHostWindow()
-{
-    return mediaPlayerOwningDocument()->view()->hostWindow();
-}
-
-IntRect HTMLMediaElement::mediaPlayerWindowClipRect()
-{
-    return mediaPlayerOwningDocument()->view()->windowClipRect();
-}
-
 CachedResourceLoader* HTMLMediaElement::mediaPlayerCachedResourceLoader()
 {
-    return mediaPlayerOwningDocument()->cachedResourceLoader();
+    return document().cachedResourceLoader();
 }
 
 bool HTMLMediaElement::mediaPlayerShouldWaitForResponseToAuthenticationChallenge(const AuthenticationChallenge& challenge)

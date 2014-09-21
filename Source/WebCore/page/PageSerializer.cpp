@@ -106,7 +106,7 @@ private:
     virtual void appendText(StringBuilder&, const Text&) override;
     virtual void appendElement(StringBuilder&, const Element&, Namespaces*) override;
     virtual void appendCustomAttributes(StringBuilder&, const Element&, Namespaces*) override;
-    virtual void appendEndTag(const Node&) override;
+    virtual void appendEndTag(const Element&) override;
 };
 
 SerializerMarkupAccumulator::SerializerMarkupAccumulator(PageSerializer& serializer, Document& document, Vector<Node*>* nodes)
@@ -163,10 +163,10 @@ void SerializerMarkupAccumulator::appendCustomAttributes(StringBuilder& out, con
     appendAttribute(out, element, Attribute(frameOwnerURLAttributeName(frameOwner), url.string()), namespaces);
 }
 
-void SerializerMarkupAccumulator::appendEndTag(const Node& node)
+void SerializerMarkupAccumulator::appendEndTag(const Element& element)
 {
-    if (node.isElementNode() && !shouldIgnoreElement(toElement(node)))
-        MarkupAccumulator::appendEndTag(node);
+    if (!shouldIgnoreElement(element))
+        MarkupAccumulator::appendEndTag(element);
 }
 
 PageSerializer::Resource::Resource()
@@ -232,7 +232,7 @@ void PageSerializer::serializeFrame(Frame* frame)
 
         if (isHTMLImageElement(element)) {
             HTMLImageElement* imageElement = toHTMLImageElement(element);
-            URL url = document->completeURL(imageElement->getAttribute(HTMLNames::srcAttr));
+            URL url = document->completeURL(imageElement->fastGetAttribute(HTMLNames::srcAttr));
             CachedImage* cachedImage = imageElement->cachedImage();
             addImageToResources(cachedImage, imageElement->renderer(), url);
         } else if (element->hasTagName(HTMLNames::linkTag)) {
@@ -266,7 +266,7 @@ void PageSerializer::serializeCSSStyleSheet(CSSStyleSheet* styleSheet, const URL
         Document* document = styleSheet->ownerDocument();
         // Some rules have resources associated with them that we need to retrieve.
         if (rule->type() == CSSRule::IMPORT_RULE) {
-            CSSImportRule* importRule = static_cast<CSSImportRule*>(rule);
+            CSSImportRule* importRule = toCSSImportRule(rule);
             URL importURL = document->completeURL(importRule->href());
             if (m_resourceURLs.contains(importURL))
                 continue;
@@ -275,7 +275,7 @@ void PageSerializer::serializeCSSStyleSheet(CSSStyleSheet* styleSheet, const URL
             // FIXME: Add support for font face rule. It is not clear to me at this point if the actual otf/eot file can
             // be retrieved from the CSSFontFaceRule object.
         } else if (rule->type() == CSSRule::STYLE_RULE)
-            retrieveResourcesForRule(static_cast<CSSStyleRule*>(rule)->styleRule(), document);
+            retrieveResourcesForRule(toCSSStyleRule(rule)->styleRule(), document);
     }
 
     if (url.isValid() && !m_resourceURLs.contains(url)) {

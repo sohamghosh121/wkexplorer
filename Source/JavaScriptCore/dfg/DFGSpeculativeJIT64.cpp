@@ -3649,7 +3649,7 @@ void SpeculativeJIT::compile(Node* node)
         GPRReg scopeGPR = scope.gpr();
         GPRReg resultGPR = result.gpr();
 
-        m_jit.loadPtr(JITCompiler::Address(scopeGPR, JSVariableObject::offsetOfRegisters()), resultGPR);
+        m_jit.loadPtr(JITCompiler::Address(scopeGPR, JSEnvironmentRecord::offsetOfRegisters()), resultGPR);
         storageResult(resultGPR, node);
         break;
     }
@@ -3889,7 +3889,7 @@ void SpeculativeJIT::compile(Node* node)
         GPRReg storageGPR = storage.gpr();
         GPRReg resultGPR = result.gpr();
         
-        StorageAccessData& storageAccessData = m_jit.graph().m_storageAccessData[node->storageAccessDataIndex()];
+        StorageAccessData& storageAccessData = node->storageAccessData();
         
         m_jit.load64(JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset)), resultGPR);
         
@@ -3934,7 +3934,7 @@ void SpeculativeJIT::compile(Node* node)
 
         speculate(node, node->child2());
 
-        StorageAccessData& storageAccessData = m_jit.graph().m_storageAccessData[node->storageAccessDataIndex()];
+        StorageAccessData& storageAccessData = node->storageAccessData();
         
         m_jit.store64(valueGPR, JITCompiler::Address(storageGPR, offsetRelativeToBase(storageAccessData.offset)));
 
@@ -4316,7 +4316,7 @@ void SpeculativeJIT::compile(Node* node)
         JITCompiler::Jump notCreated = m_jit.branchTest64(JITCompiler::Zero, activationValueGPR);
 
         SymbolTable* symbolTable = m_jit.symbolTableFor(node->origin.semantic);
-        int registersOffset = JSActivation::registersOffset(symbolTable);
+        int registersOffset = JSLexicalEnvironment::registersOffset(symbolTable);
 
         int bytecodeCaptureStart = symbolTable->captureStart();
         int machineCaptureStart = m_jit.graph().m_machineCaptureStart;
@@ -4333,7 +4333,7 @@ void SpeculativeJIT::compile(Node* node)
                     registersOffset + (bytecodeCaptureStart - i) * sizeof(Register)));
         }
         m_jit.addPtr(TrustedImm32(registersOffset), activationValueGPR, scratchGPR);
-        m_jit.storePtr(scratchGPR, JITCompiler::Address(activationValueGPR, JSActivation::offsetOfRegisters()));
+        m_jit.storePtr(scratchGPR, JITCompiler::Address(activationValueGPR, JSLexicalEnvironment::offsetOfRegisters()));
 
         notCreated.link(&m_jit);
         noResult(node);

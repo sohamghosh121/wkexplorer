@@ -3,7 +3,7 @@
  *               1999 Waldo Bastian (bastian@kde.org)
  *               2001 Andreas Schlapbach (schlpbch@iam.unibe.ch)
  *               2001-2003 Dirk Mueller (mueller@kde.org)
- * Copyright (C) 2002, 2006, 2007, 2008, 2009, 2010, 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2002, 2006, 2007, 2008, 2009, 2010, 2013, 2014 Apple Inc. All rights reserved.
  * Copyright (C) 2008 David Smith (catfish.man@gmail.com)
  * Copyright (C) 2010 Google Inc. All rights reserved.
  *
@@ -42,9 +42,16 @@ namespace WebCore {
 
 using namespace HTMLNames;
 
+struct SameSizeAsCSSSelector {
+    unsigned flags;
+    void* unionPointer;
+};
+
+static_assert(sizeof(CSSSelector) == sizeof(SameSizeAsCSSSelector), "CSSSelector should remain small.");
+
 void CSSSelector::createRareData()
 {
-    ASSERT(m_match != Tag);
+    ASSERT(match() != Tag);
     if (m_hasRareData)
         return;
     // Move the value to the rare data stucture.
@@ -85,10 +92,12 @@ inline unsigned CSSSelector::specificityForOneSelector() const
 {
     // FIXME: Pseudo-elements and pseudo-classes do not have the same specificity. This function
     // isn't quite correct.
-    switch (m_match) {
+    switch (match()) {
     case Id:
         return 0x10000;
 
+    case PagePseudoClass:
+        break;
     case PseudoClass:
         // FIXME: PsuedoAny should base the specificity on the sub-selectors.
         // See http://lists.w3.org/Archives/Public/www-style/2010Sep/0530.html
@@ -105,7 +114,6 @@ inline unsigned CSSSelector::specificityForOneSelector() const
     case Begin:
     case End:
         return 0x100;
-
     case Tag:
         return (tagQName().localName() != starAtom) ? 1 : 0;
     case Unknown:
@@ -121,7 +129,7 @@ unsigned CSSSelector::specificityForPage() const
     unsigned s = 0;
 
     for (const CSSSelector* component = this; component; component = component->tagHistory()) {
-        switch (component->m_match) {
+        switch (component->match()) {
         case Tag:
             s += tagQName().localName() == starAtom ? 0 : 4;
             break;
@@ -208,13 +216,13 @@ bool CSSSelector::operator==(const CSSSelector& other) const
     while (sel1 && sel2) {
         if (sel1->attribute() != sel2->attribute()
             || sel1->relation() != sel2->relation()
-            || sel1->m_match != sel2->m_match
+            || sel1->match() != sel2->match()
             || sel1->value() != sel2->value()
             || sel1->m_pseudoType != sel2->m_pseudoType
             || sel1->argument() != sel2->argument()) {
             return false;
         }
-        if (sel1->m_match == Tag) {
+        if (sel1->match() == Tag) {
             if (sel1->tagQName() != sel2->tagQName())
                 return false;
         }
@@ -249,7 +257,7 @@ String CSSSelector::selectorText(const String& rightSide) const
 {
     StringBuilder str;
 
-    if (m_match == CSSSelector::Tag && !m_tagIsForNamespaceRule) {
+    if (match() == CSSSelector::Tag && !m_tagIsForNamespaceRule) {
         if (tagQName().prefix().isNull())
             str.append(tagQName().localName());
         else {
@@ -261,13 +269,13 @@ String CSSSelector::selectorText(const String& rightSide) const
 
     const CSSSelector* cs = this;
     while (true) {
-        if (cs->m_match == CSSSelector::Id) {
+        if (cs->match() == CSSSelector::Id) {
             str.append('#');
             serializeIdentifier(cs->value(), str);
-        } else if (cs->m_match == CSSSelector::Class) {
+        } else if (cs->match() == CSSSelector::Class) {
             str.append('.');
             serializeIdentifier(cs->value(), str);
-        } else if (cs->m_match == CSSSelector::PseudoClass) {
+        } else if (cs->match() == CSSSelector::PseudoClass) {
             switch (cs->pseudoClassType()) {
 #if ENABLE(FULLSCREEN_API)
             case CSSSelector::PseudoClassAnimatingFullScreenTransition:
@@ -394,7 +402,21 @@ String CSSSelector::selectorText(const String& rightSide) const
                 break;
             case CSSSelector::PseudoClassNthChild:
                 str.appendLiteral(":nth-child(");
-                appendPseudoClassFunctionTail(str, cs);
+                str.append(cs->argument());
+#if ENABLE(CSS_SELECTORS_LEVEL4)
+                if (const CSSSelectorList* selectorList = cs->selectorList()) {
+                    str.appendLiteral(" of ");
+                    const CSSSelector* firstSubSelector = selectorList->first();
+                    for (const CSSSelector* subSelector = firstSubSelector; subSelector; subSelector = CSSSelectorList::next(subSelector)) {
+                        if (subSelector != firstSubSelector)
+                            str.appendLiteral(", ");
+                        str.append(subSelector->selectorText());
+                    }
+                }
+#else
+                ASSERT(!cs->selectorList());
+#endif
+                str.append(')');
                 break;
             case CSSSelector::PseudoClassNthLastChild:
                 str.appendLiteral(":nth-last-child(");
@@ -469,7 +491,7 @@ String CSSSelector::selectorText(const String& rightSide) const
             case CSSSelector::PseudoClassUnknown:
                 ASSERT_NOT_REACHED();
             }
-        } else if (cs->m_match == CSSSelector::PseudoElement) {
+        } else if (cs->match() == CSSSelector::PseudoElement) {
             str.appendLiteral("::");
             str.append(cs->value());
         } else if (cs->isAttributeSelector()) {
@@ -480,7 +502,7 @@ String CSSSelector::selectorText(const String& rightSide) const
                 str.append('|');
             }
             str.append(cs->attribute().localName());
-            switch (cs->m_match) {
+            switch (cs->match()) {
                 case CSSSelector::Exact:
                     str.append('=');
                     break;
@@ -506,11 +528,11 @@ String CSSSelector::selectorText(const String& rightSide) const
                 default:
                     break;
             }
-            if (cs->m_match != CSSSelector::Set) {
+            if (cs->match() != CSSSelector::Set) {
                 serializeString(cs->value(), str);
                 str.append(']');
             }
-        } else if (cs->m_match == CSSSelector::PagePseudoClass) {
+        } else if (cs->match() == CSSSelector::PagePseudoClass) {
             switch (cs->pagePseudoClassType()) {
             case PagePseudoClassFirst:
                 str.appendLiteral(":first");

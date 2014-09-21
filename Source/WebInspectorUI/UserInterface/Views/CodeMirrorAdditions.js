@@ -105,7 +105,7 @@
 
                 state._linkQuoteCharacter = quote === "'" || quote === "\"" ? quote : null;
 
-                // Rewind the steam to the start of this token.
+                // Rewind the stream to the start of this token.
                 stream.pos = startPosition;
 
                 // Eat the open quote of the string so the string style
@@ -139,7 +139,7 @@
 
         // Parse characters until the end of the stream/line or a proper end quote character.
         while ((ch = stream.next()) != null) {
-            if (ch == quote && !escaped) {
+            if (ch === quote && !escaped) {
                 reachedEndOfURL = true;
                 break;
             }
@@ -199,10 +199,12 @@
                 if (stream.current() === "url") {
                     // If the current text is "url" then we should expect the next string token to be a link.
                     state._expectLink = true;
-                } else if (state._expectLink) {
-                    // We expected a string and got it. This is a link. Parse it the way we want it.
-                    delete state._expectLink;
+                } else if (hexColorRegex.test(stream.current()))
+                    style = style + " hex-color";
+            } else if (state._expectLink) {
+                delete state._expectLink;
 
+                if (style === "string") {
                     // This is a link, so setup the state to process it next.
                     state._urlTokenize = tokenizeCSSURLString;
                     state._urlBaseStyle = style;
@@ -212,18 +214,14 @@
                     state._urlQuoteCharacter = quote === "'" || quote === "\"" ? quote : ")";
                     state._unquotedURLString = state._urlQuoteCharacter === ")";
 
-                    // Rewind the steam to the start of this token.
+                    // Rewind the stream to the start of this token.
                     stream.pos = startPosition;
 
                     // Eat the open quote of the string so the string style
                     // will be used for the quote character.
                     if (!state._unquotedURLString)
                         stream.eat(state._urlQuoteCharacter);
-                } else if (hexColorRegex.test(stream.current()))
-                    style = style + " hex-color";
-            } else if (state._expectLink) {
-                // We expected a string and didn't get one. Cleanup.
-                delete state._expectLink;
+                }
             }
         }
 
@@ -261,7 +259,7 @@
 
     CodeMirror.defineExtension("hasLineClass", function(line, where, className) {
         // This matches the arguments to addLineClass and removeLineClass.
-        var classProperty = (where === "text" ? "textClass" : (where == "background" ? "bgClass" : "wrapClass"));
+        var classProperty = (where === "text" ? "textClass" : (where === "background" ? "bgClass" : "wrapClass"));
         var lineInfo = this.lineInfo(line);
         if (!lineInfo)
             return false;
@@ -386,7 +384,7 @@
             var newLength = alteredNumberString.length;
 
             // Fix up the selection so it follows the increase or decrease in the replacement length.
-            if (previousLength != newLength) {
+            if (previousLength !== newLength) {
                 if (selectionStart.line === from.line && selectionStart.ch > from.ch)
                     selectionStart.ch += newLength - previousLength;
 
@@ -452,7 +450,7 @@
                             lineRects.push(new WebInspector.Rect(minX, minY, maxX - minX, maxY - minY));
                         }
                         var minX = Math.floor(coords.left);
-                        var minY = Math.floor(coords.top)
+                        var minY = Math.floor(coords.top);
                         maxY = Math.ceil(coords.bottom);
                     }
                 }
@@ -552,6 +550,7 @@
                 var endChar = match.index + match[0].length;
 
                 var openParentheses = 0;
+                var c = null;
                 while (c = lineContent[endChar]) {
                     if (c === "(")
                         openParentheses++;

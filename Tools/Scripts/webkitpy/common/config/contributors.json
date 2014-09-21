@@ -415,16 +415,6 @@
             "brettx"
          ]
       },
-      "Brian Burg" : {
-         "emails" : [
-            "burg@cs.washington.edu"
-         ],
-         "expertise" : "Developer Tools, Web Inspector",
-         "nicks" : [
-            "bburg",
-            "brrian"
-         ]
-      },
       "Brian Holt" : {
          "emails" : [
             "brian.holt@samsung.com"
@@ -840,6 +830,16 @@
          "expertise" : "The EFLWebKit Port, Touch and Gesture",
          "nicks" : [
             "eunmi"
+         ]
+      },
+      "Eva Balazsfalvi" : {
+         "emails" : [
+            "evab.u-szeged@partner.samsung.com",
+            "evab@inf.u-szeged.hu",
+            "balazsfalvi.eva@stud.u-szeged.hu"
+         ],
+         "nicks" : [
+            "ebalazsfalvi"
          ]
       },
       "Evan Martin" : {
@@ -2302,11 +2302,21 @@
       },
       "Ryuan Choi" : {
          "emails" : [
-            "ryuan.choi@gmail.com"
+            "ryuan.choi@gmail.com",
+            "ryuan.choi@navercorp.com",
+            "ryuan.choi@webkit.org"
          ],
          "expertise" : "The EFLWebKit Port",
          "nicks" : [
             "ryuan"
+         ]
+      },
+      "Saam Barati" : {
+         "emails" : [
+            "saambarati1@gmail.com"
+         ],
+         "nicks" : [
+            "saamyjoon"
          ]
       },
       "Sadrul Habib Chowdhury" : {
@@ -2955,15 +2965,6 @@
             "epenner"
          ]
       },
-      "Eva Balazsfalvi" : {
-         "emails" : [
-            "evab.u-szeged@partner.samsung.com",
-            "balazsfalvi.eva@stud.u-szeged.hu"
-         ],
-         "nicks" : [
-            "ebalazsfalvi"
-         ]
-      },
       "Frédéric Wang" : {
          "emails" : [
             "fred.wang@free.fr"
@@ -3593,6 +3594,16 @@
             "bfulgham"
          ]
       },
+      "Brian Burg" : {
+         "emails" : [
+            "burg@cs.washington.edu"
+         ],
+         "expertise" : "Developer Tools, Web Inspector",
+         "nicks" : [
+            "bburg",
+            "brrian"
+         ]
+      },
       "Brian Weinstein" : {
          "emails" : [
             "bweinstein@apple.com"
@@ -3683,13 +3694,14 @@
       },
       "Christophe Dumez" : {
          "emails" : [
+            "cdumez@apple.com",
             "dchris@gmail.com",
             "ch.dumez@samsung.com",
             "ch.dumez@sta.samsung.com",
             "ch.dumez@sisa.samsung.com",
             "christophe.dumez@intel.com"
          ],
-         "expertise" : "The EFLWebKit Port, Bindings generator",
+         "expertise" : "The EFLWebKit Port, Bindings generator, Performance",
          "nicks" : [
             "cdumez"
          ]
