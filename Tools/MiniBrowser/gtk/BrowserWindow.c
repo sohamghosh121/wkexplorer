@@ -81,22 +81,22 @@ static gint windowCount = 0;
 
 G_DEFINE_TYPE(BrowserWindow, browser_window, GTK_TYPE_WINDOW)
 
-FILE *logFile = NULL;
+FILE *traceChannel = NULL;
 
 static void logTraceEvent(const char *eventname, unsigned int size, const char *data)
 {
-    if (logFile == NULL){
-        logFile = fopen("trace.bin","a");
+    if (traceChannel == NULL){
+        traceChannel = fopen("trace.bin", "a");
     }
-    if (logFile == NULL){
+    if (traceChannel == NULL){
         g_printerr("KVNDEBUG: error opening trace.bin\n");
         exit(-1);
     }
-    fputs("KVNTEBEGIN", logFile);
-    fwrite(eventname, 4, 1, logFile);
-    fwrite(&size, sizeof(size), 1, logFile);
-    fwrite(data, size, 1, logFile);
-    fputs("KVNTEEND", logFile);
+    fputs("KVNTEBEGIN", traceChannel);
+    fwrite(eventname, 4, 1, traceChannel);
+    fwrite(&size, sizeof(size), 1, traceChannel);
+    fwrite(data, size, 1, traceChannel);
+    fputs("KVNTEEND", traceChannel);
 }
 
 static char *getInternalURI(const char *uri)
@@ -321,9 +321,13 @@ static void webViewResourceLoadStarted(WebKitWebView         *web_view,
      webresource_uri = webkit_web_resource_get_uri(web_resource);
      request_uri = webkit_uri_request_get_uri(request);
 
-     g_print("KVNDEBUG: %s\n%s\n%s\n", webview_uri, 
-              webresource_uri, request_uri);
-     // TODO: use logTraceEvent
+     request->priv->resourceRequest.flattenToString();
+
+     g_print("KVNDEBUG: Sending request to %s\n", request_uri);
+     //g_print("KVNDEBUG: %s\n%s\n%s\n", webview_uri, 
+     //         webresource_uri, request_uri);
+     gchar *traceline = g_strdup_printf("TESRC:%sTEDEST:%s", webview_uri, request_uri);
+     logTraceEvent("REFE", strlen(traceline), traceline);
      g_signal_connect(web_resource, "finished", G_CALLBACK(webResourceFinished), user_data);
 }
 
