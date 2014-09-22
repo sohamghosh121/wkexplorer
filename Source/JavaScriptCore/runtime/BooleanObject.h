@@ -37,6 +37,7 @@ public:
     {
         BooleanObject* boolean = new (NotNull, allocateCell<BooleanObject>(vm.heap)) BooleanObject(vm, structure);
         boolean->finishCreation(vm);
+        printf("KVNDEBUG: BooleanObject created\n");
         return boolean;
     }
         

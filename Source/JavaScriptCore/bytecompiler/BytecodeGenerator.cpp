@@ -62,6 +62,8 @@ ParserError BytecodeGenerator::generate()
 {
     SamplingRegion samplingRegion("Bytecode Generation");
     
+    printf("KVNDEBUG: in BytecodeGenerator::generate()\n");
+    
     m_codeBlock->setThisRegister(m_thisRegister.virtualRegister());
     for (size_t i = 0; i < m_deconstructedParameters.size(); i++) {
         auto& entry = m_deconstructedParameters[i];

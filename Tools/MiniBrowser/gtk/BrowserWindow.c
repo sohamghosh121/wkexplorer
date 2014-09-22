@@ -321,7 +321,7 @@ static void webViewResourceLoadStarted(WebKitWebView         *web_view,
      webresource_uri = webkit_web_resource_get_uri(web_resource);
      request_uri = webkit_uri_request_get_uri(request);
 
-     request->priv->resourceRequest.flattenToString();
+     //request->priv->resourceRequest.flattenToString();
 
      g_print("KVNDEBUG: Sending request to %s\n", request_uri);
      //g_print("KVNDEBUG: %s\n%s\n%s\n", webview_uri, 
