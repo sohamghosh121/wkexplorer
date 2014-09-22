@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
         for (i = 0; uriArguments[i]; i++)
             createBrowserWindow(uriArguments[i], webkitSettings);
     } else
-        createBrowserWindow("http://www.facebook.com/", webkitSettings);
+        createBrowserWindow("http://peacekeeper.futuremark.com/run.action", webkitSettings);
 
     g_clear_object(&webkitSettings);
 

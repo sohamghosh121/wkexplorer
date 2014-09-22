@@ -55,6 +55,7 @@ namespace JSC {
         JSValue call()
         { 
             ASSERT(m_valid);
+            printf("KVNDEBUG: in JSC::CachedCall::call()\n");
             return m_interpreter->execute(m_closure);
         }
         void setThis(JSValue v) { m_protoCallFrame.setThisValue(v); }
